@@ -29,8 +29,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Share2, Download, Image } from "lucide-react";
-import * as htmlToImage from "html-to-image";
+import dynamic from "next/dynamic";
+
 import { useRef } from "react";
+
+// We'll use direct import for html-to-image and handle it client-side only
+// No need for dynamic import as we're using it only in client-side event handlers
 
 export default function Home() {
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
@@ -56,8 +60,8 @@ export default function Home() {
     setIsProcessing(true);
 
     try {
-      // Call OpenRouter API through our API route
-      const response = await fetch("/api/openrouter", {
+      // Call OpenRouter API through our API route with absolute URL
+      const response = await fetch(`${window.location.origin}/api/openrouter`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -75,7 +79,7 @@ export default function Home() {
       if (extractedItems && extractedItems.length > 0) {
         // Transform extracted items to the format expected by ItemList
         const formattedItems = extractedItems.map(
-          (item: ExtractedItem, index) => ({
+          (item: ExtractedItem, index: number) => ({
             id: `item-${index}`,
             name: item.name,
             price: item.price,
@@ -367,17 +371,21 @@ export default function Home() {
                             0,
                           );
 
-                        const csvContent = `Item,Price,Assigned To\n${items
+                        // Create CSV content with proper escaping for special characters
+                        const itemRows = items
                           .map((item) => {
-                            let assignedTo = item.assignedTo;
-                            if (assignedTo === "shared") {
-                              assignedTo = `Shared (You: ${item.splitPercentage?.mine || 50}%, Friend: ${item.splitPercentage?.friend || 50}%)`;
-                            }
-                            return `"${item.name}",${item.price},${assignedTo || "Unassigned"}`;
+                            const assignedTo = item.assignedTo;
+                            const displayValue =
+                              assignedTo === "shared"
+                                ? `Shared (You: ${item.splitPercentage?.mine || 50}%, Friend: ${item.splitPercentage?.friend || 50}%)`
+                                : assignedTo;
+                            // Escape quotes in item names
+                            const escapedName = item.name.replace(/"/g, '""');
+                            return `"${escapedName}",${item.price},"${displayValue || "Unassigned"}"`;
                           })
-                          .join(
-                            "\n",
-                          )}\n\nSummary:\nYour Total,${myTotal.toFixed(2)}\nFriend's Total,${friendTotal.toFixed(2)}`;
+                          .join("\n");
+
+                        const csvContent = `Item,Price,Assigned To\n${itemRows}\n\nSummary:\nYour Total,${myTotal.toFixed(2)}\nFriend's Total,${friendTotal.toFixed(2)}`;
 
                         const blob = new Blob([csvContent], {
                           type: "text/csv;charset=utf-8;",
@@ -411,11 +419,14 @@ export default function Home() {
                             description: "Creating your receipt image...",
                           });
 
-                          htmlToImage
-                            .toPng(summaryElement, {
-                              quality: 0.95,
-                              backgroundColor: "#ffffff",
-                            })
+                          // Import html-to-image only when needed
+                          import("html-to-image")
+                            .then((htmlToImage) =>
+                              htmlToImage.toPng(summaryElement, {
+                                quality: 0.95,
+                                backgroundColor: "#ffffff",
+                              }),
+                            )
                             .then((dataUrl) => {
                               const link = document.createElement("a");
                               link.download = "receipt-split.png";

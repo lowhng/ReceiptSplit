@@ -69,8 +69,11 @@ export async function extractItemsFromReceipt(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "HTTP-Referer": "https://dazzling-allen1-7ggv9.view-3.tempo-dev.app",
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY || ""}`,
+          "HTTP-Referer":
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "https://receipt-splitter.vercel.app",
           "X-Title": "Receipt Splitter App",
         },
         cache: "no-store",

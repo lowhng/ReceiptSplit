@@ -22,7 +22,8 @@ const ThemeSwitcher = () => {
   }, []);
 
   if (!mounted) {
-    return null;
+    // Return a placeholder with the same dimensions to prevent layout shift
+    return <Button variant="ghost" size={"sm"} aria-hidden="true" />;
   }
 
   const ICON_SIZE = 16;

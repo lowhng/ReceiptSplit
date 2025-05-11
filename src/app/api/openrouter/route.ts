@@ -12,6 +12,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!process.env.OPENROUTER_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenRouter API key is not configured" },
+        { status: 500 },
+      );
+    }
+
     const items = await extractItemsFromReceipt(imageData, modelId);
 
     return NextResponse.json({ items });

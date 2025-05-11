@@ -50,3 +50,16 @@ node_modules/
 .git
 
 .github/
+
+# build output
+.vercel
+.turbo
+.swc
+.env*.local
+.env
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
