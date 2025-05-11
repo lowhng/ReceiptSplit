@@ -74,12 +74,14 @@ export default function Home() {
 
       if (extractedItems && extractedItems.length > 0) {
         // Transform extracted items to the format expected by ItemList
-        const formattedItems = extractedItems.map((item, index) => ({
-          id: `item-${index}`,
-          name: item.name,
-          price: item.price,
-          assignedTo: null,
-        }));
+        const formattedItems = extractedItems.map(
+          (item: ExtractedItem, index) => ({
+            id: `item-${index}`,
+            name: item.name,
+            price: item.price,
+            assignedTo: null,
+          }),
+        );
 
         setItems(formattedItems);
         toast({
