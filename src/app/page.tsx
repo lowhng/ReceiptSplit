@@ -415,8 +415,8 @@ export default function Home() {
     });
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9">
-      <header className="w-full max-w-4xl mb-4 sm:mb-8 text-center">
+    <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9 w-full">
+      <header className="w-full max-w-5xl mb-4 sm:mb-8 text-center mx-auto">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2">
           ReSplit
         </h1>
@@ -424,7 +424,7 @@ export default function Home() {
           Scan receipts and split bills with friends easily
         </p>
       </header>
-      <main className="w-full max-w-4xl flex flex-col gap-4 sm:gap-8">
+      <main className="w-full max-w-5xl flex flex-col gap-4 sm:gap-8 mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mb-4 sm:mb-6 w-full">
             <TabsTrigger
@@ -457,8 +457,8 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-x-3">
-                    <div className="flex items-center gap-x-px mt-[unset] mb-6 mx-[unset]">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-x-3 gap-y-2">
+                    <div className="flex items-center gap-x-px sm:mt-0 sm:mb-0 mb-2">
                       <Checkbox
                         id="premium"
                         checked={isPremiumEnabled}
@@ -476,7 +476,7 @@ export default function Home() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex items-center justify-center text-xs sm:text-sm w-full sm:w-auto gap-x-1.5 py-1"
+                      className="flex items-center justify-center text-xs sm:text-sm w-full sm:w-auto gap-x-1.5 py-1 sm:ml-auto"
                       onClick={() => setLoadDialogOpen(true)}
                     >
                       <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" /> Load
