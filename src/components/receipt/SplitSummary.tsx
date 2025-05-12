@@ -16,13 +16,14 @@ import { Share2, Download } from "lucide-react";
 
 interface SplitSummaryProps {
   myItems?: Array<{ name: string; price: number }>;
-  friendItems?: Array<{ name: string; price: number }>;
+  friendItems?: Array<Array<{ name: string; price: number }>>;
   sharedItems?: Array<{
     name: string;
     price: number;
-    myShare: number;
-    friendShare: number;
+    mine: number;
+    [key: string]: number | string;
   }>;
+  friendCount?: number;
 }
 
 const SplitSummary = ({
@@ -31,13 +32,16 @@ const SplitSummary = ({
     { name: "Fries", price: 4.99 },
   ],
   friendItems = [
-    { name: "Salad", price: 9.99 },
-    { name: "Soda", price: 2.99 },
+    [
+      { name: "Salad", price: 9.99 },
+      { name: "Soda", price: 2.99 },
+    ],
   ],
   sharedItems = [
-    { name: "Appetizer", price: 8.99, myShare: 4.5, friendShare: 4.49 },
-    { name: "Dessert", price: 7.99, myShare: 4.0, friendShare: 3.99 },
+    { name: "Appetizer", price: 8.99, mine: 4.5, friend1: 4.49 },
+    { name: "Dessert", price: 7.99, mine: 4.0, friend1: 3.99 },
   ],
+  friendCount = 1,
 }) => {
   const [includeTax, setIncludeTax] = useState<boolean>(false);
   const [includeTip, setIncludeTip] = useState<boolean>(false);
@@ -48,36 +52,59 @@ const SplitSummary = ({
   // Calculate subtotals
   const mySubtotal =
     myItems.reduce((sum, item) => sum + item.price, 0) +
-    sharedItems.reduce((sum, item) => sum + item.myShare, 0);
-  const friendSubtotal =
-    friendItems.reduce((sum, item) => sum + item.price, 0) +
-    sharedItems.reduce((sum, item) => sum + item.friendShare, 0);
-  const totalBeforeTaxAndTip = mySubtotal + friendSubtotal;
+    sharedItems.reduce((sum, item) => sum + item.mine, 0);
+
+  // Calculate each friend's subtotal
+  const friendSubtotals = friendItems.map((items, index) => {
+    const friendId = `friend${index + 1}`;
+    return {
+      id: friendId,
+      subtotal:
+        items.reduce((sum, item) => sum + item.price, 0) +
+        sharedItems.reduce((sum, item) => sum + (item[friendId] || 0), 0),
+    };
+  });
+
+  // Calculate total before tax and tip
+  const totalBeforeTaxAndTip =
+    mySubtotal +
+    friendSubtotals.reduce((sum, friend) => sum + friend.subtotal, 0);
 
   // Calculate tax and tip proportions
   const myTaxProportion =
     includeTax && totalBeforeTaxAndTip > 0
       ? (mySubtotal / totalBeforeTaxAndTip) * taxAmount
       : 0;
-  const friendTaxProportion =
-    includeTax && totalBeforeTaxAndTip > 0
-      ? (friendSubtotal / totalBeforeTaxAndTip) * taxAmount
-      : 0;
 
   const myTipProportion =
     includeTip && totalBeforeTaxAndTip > 0
       ? (mySubtotal / totalBeforeTaxAndTip) * tipAmount
       : 0;
-  const friendTipProportion =
-    includeTip && totalBeforeTaxAndTip > 0
-      ? (friendSubtotal / totalBeforeTaxAndTip) * tipAmount
-      : 0;
+
+  // Calculate each friend's tax and tip proportions
+  const friendProportions = friendSubtotals.map((friend) => {
+    const taxProportion =
+      includeTax && totalBeforeTaxAndTip > 0
+        ? (friend.subtotal / totalBeforeTaxAndTip) * taxAmount
+        : 0;
+
+    const tipProportion =
+      includeTip && totalBeforeTaxAndTip > 0
+        ? (friend.subtotal / totalBeforeTaxAndTip) * tipAmount
+        : 0;
+
+    return {
+      ...friend,
+      taxProportion,
+      tipProportion,
+      total: friend.subtotal + taxProportion + tipProportion,
+    };
+  });
 
   // Calculate final totals
   const myTotal = mySubtotal + myTaxProportion + myTipProportion;
-  const friendTotal =
-    friendSubtotal + friendTaxProportion + friendTipProportion;
-  const grandTotal = myTotal + friendTotal;
+  const grandTotal =
+    myTotal + friendProportions.reduce((sum, friend) => sum + friend.total, 0);
 
   // Handle tax input change
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,13 +159,19 @@ const SplitSummary = ({
               Subtotal: {formatCurrency(mySubtotal)}
             </p>
           </div>
-          <div className="space-y-1 sm:space-y-2">
-            <h3 className="font-medium text-blue-500 text-sm sm:text-base">
-              Friend's Items
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Subtotal: {formatCurrency(friendSubtotal)}
-            </p>
+          <div>
+            {friendSubtotals.map((friend, index) => (
+              <div key={friend.id} className="space-y-1 sm:space-y-2 mb-2">
+                <h3
+                  className={`font-medium text-sm sm:text-base ${index === 0 ? "text-blue-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
+                >
+                  Friend {index + 1}'s Items
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Subtotal: {formatCurrency(friend.subtotal)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -252,22 +285,28 @@ const SplitSummary = ({
               {formatCurrency(myTotal)}
             </p>
           </div>
-          <div className="space-y-1">
-            <h3 className="font-medium text-blue-500 text-sm sm:text-base">
-              Friend's Total
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Items: {formatCurrency(friendSubtotal)}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Tax: {formatCurrency(friendTaxProportion)}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Tip: {formatCurrency(friendTipProportion)}
-            </p>
-            <p className="font-bold text-sm sm:text-base">
-              {formatCurrency(friendTotal)}
-            </p>
+          <div>
+            {friendProportions.map((friend, index) => (
+              <div key={friend.id} className="space-y-1 mb-3">
+                <h3
+                  className={`font-medium text-sm sm:text-base ${index === 0 ? "text-blue-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
+                >
+                  Friend {index + 1}'s Total
+                </h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Items: {formatCurrency(friend.subtotal)}
+                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Tax: {formatCurrency(friend.taxProportion)}
+                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Tip: {formatCurrency(friend.tipProportion)}
+                </p>
+                <p className="font-bold text-sm sm:text-base">
+                  {formatCurrency(friend.total)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -277,7 +316,6 @@ const SplitSummary = ({
           </p>
         </div>
       </CardContent>
-      {/* Footer buttons removed as they're handled in the parent component */}
     </Card>
   );
 };

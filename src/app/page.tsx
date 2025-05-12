@@ -44,13 +44,21 @@ export default function Home() {
     "meta-llama/llama-4-maverick:free",
   );
   const [isPremiumEnabled, setIsPremiumEnabled] = useState(false);
+  const [friendCount, setFriendCount] = useState<number>(1);
   const [items, setItems] = useState<
     Array<{
       id: string;
       name: string;
       price: number;
-      assignedTo: "mine" | "friend" | "shared" | null;
-      splitPercentage?: { mine: number; friend: number };
+      assignedTo:
+        | "mine"
+        | "friend1"
+        | "friend2"
+        | "friend3"
+        | "friend4"
+        | "shared"
+        | null;
+      splitPercentage?: Record<string, number>;
     }>
   >([]);
   const { toast } = useToast();
@@ -121,18 +129,37 @@ export default function Home() {
 
   const handleItemAssign = (
     itemId: string,
-    assignedTo: "mine" | "friend" | "shared" | null,
+    assignedTo:
+      | "mine"
+      | "friend1"
+      | "friend2"
+      | "friend3"
+      | "friend4"
+      | "shared"
+      | null,
   ) => {
     setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, assignedTo } : item,
-      ),
+      prevItems.map((item) => {
+        if (item.id === itemId) {
+          // If item is marked as shared, create equal split percentages
+          if (assignedTo === "shared") {
+            const equalShare = 100 / (friendCount + 1);
+            const percentages: Record<string, number> = { mine: equalShare };
+            for (let i = 1; i <= friendCount; i++) {
+              percentages[`friend${i}`] = equalShare;
+            }
+            return { ...item, assignedTo, splitPercentage: percentages };
+          }
+          return { ...item, assignedTo };
+        }
+        return item;
+      }),
     );
   };
 
   const handleSplitPercentageChange = (
     itemId: string,
-    percentages: { mine: number; friend: number },
+    percentages: Record<string, number>,
   ) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
@@ -143,19 +170,44 @@ export default function Home() {
 
   // Prepare data for SplitSummary
   const myItems = items.filter((item) => item.assignedTo === "mine");
-  const friendItems = items.filter((item) => item.assignedTo === "friend");
+
+  // Create an array of friend items for each friend
+  const friendItems = Array.from({ length: friendCount }, (_, i) => {
+    const friendId = `friend${i + 1}`;
+    return items.filter((item) => item.assignedTo === friendId);
+  });
+
   const sharedItems = items
     .filter((item) => item.assignedTo === "shared")
-    .map((item) => ({
-      name: item.name,
-      price: item.price,
-      myShare: item.splitPercentage
-        ? (item.price * item.splitPercentage.mine) / 100
-        : item.price / 2,
-      friendShare: item.splitPercentage
-        ? (item.price * item.splitPercentage.friend) / 100
-        : item.price / 2,
-    }));
+    .map((item) => {
+      const shares: Record<string, number> = {};
+
+      if (item.splitPercentage) {
+        // Use the defined split percentages
+        shares.mine = (item.price * (item.splitPercentage.mine || 0)) / 100;
+
+        // Add each friend's share
+        for (let i = 1; i <= friendCount; i++) {
+          const friendId = `friend${i}`;
+          shares[friendId] =
+            (item.price * (item.splitPercentage[friendId] || 0)) / 100;
+        }
+      } else {
+        // Equal split if no percentages defined
+        const equalShare = item.price / (friendCount + 1);
+        shares.mine = equalShare;
+
+        for (let i = 1; i <= friendCount; i++) {
+          shares[`friend${i}`] = equalShare;
+        }
+      }
+
+      return {
+        name: item.name,
+        price: item.price,
+        ...shares,
+      };
+    });
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center p-3 sm:p-4 md:p-8">
@@ -251,10 +303,40 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <ReceiptCapture
-                    onReceiptCaptured={handleReceiptCaptured}
-                    isProcessing={isProcessing}
-                  />
+                  <div className="space-y-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label
+                        htmlFor="friend-count"
+                        className="text-xs sm:text-sm"
+                      >
+                        How many friends are you splitting with?
+                      </Label>
+                      <Select
+                        value={friendCount.toString()}
+                        onValueChange={(value) =>
+                          setFriendCount(parseInt(value))
+                        }
+                      >
+                        <SelectTrigger
+                          id="friend-count"
+                          className="w-full text-xs sm:text-sm h-8 sm:h-10"
+                        >
+                          <SelectValue placeholder="Select number of friends" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 friend</SelectItem>
+                          <SelectItem value="2">2 friends</SelectItem>
+                          <SelectItem value="3">3 friends</SelectItem>
+                          <SelectItem value="4">4 friends</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <ReceiptCapture
+                      onReceiptCaptured={handleReceiptCaptured}
+                      isProcessing={isProcessing}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -274,6 +356,7 @@ export default function Home() {
                   <ItemList
                     receiptImage={receiptImage}
                     items={items}
+                    friendCount={friendCount}
                     onItemAssign={handleItemAssign}
                     onSplitPercentageChange={handleSplitPercentageChange}
                   />
@@ -301,6 +384,7 @@ export default function Home() {
                       myItems={myItems}
                       friendItems={friendItems}
                       sharedItems={sharedItems}
+                      friendCount={friendCount}
                     />
                   </div>
 
@@ -313,23 +397,39 @@ export default function Home() {
                           const myTotal =
                             myItems.reduce((sum, item) => sum + item.price, 0) +
                             sharedItems.reduce(
-                              (sum, item) => sum + item.myShare,
+                              (sum, item) => sum + item.mine,
                               0,
                             );
-                          const friendTotal =
-                            friendItems.reduce(
-                              (sum, item) => sum + item.price,
-                              0,
-                            ) +
-                            sharedItems.reduce(
-                              (sum, item) => sum + item.friendShare,
-                              0,
-                            );
+
+                          // Calculate each friend's total
+                          const friendTotals = friendItems.map(
+                            (items, index) => {
+                              const friendId = `friend${index + 1}`;
+                              return {
+                                id: friendId,
+                                total:
+                                  items.reduce(
+                                    (sum, item) => sum + item.price,
+                                    0,
+                                  ) +
+                                  sharedItems.reduce(
+                                    (sum, item) => sum + (item[friendId] || 0),
+                                    0,
+                                  ),
+                              };
+                            },
+                          );
+
+                          // Format the text for sharing
+                          let shareText = `My total: ${myTotal.toFixed(2)}\n`;
+                          friendTotals.forEach((friend, index) => {
+                            shareText += `Friend ${index + 1}'s total: ${friend.total.toFixed(2)}\n`;
+                          });
 
                           navigator
                             .share({
                               title: "Receipt Split Summary",
-                              text: `My total: ${myTotal.toFixed(2)}\nFriend's total: ${friendTotal.toFixed(2)}`,
+                              text: shareText,
                             })
                             .catch((err) => {
                               toast({
@@ -357,35 +457,54 @@ export default function Home() {
                       onClick={() => {
                         const myTotal =
                           myItems.reduce((sum, item) => sum + item.price, 0) +
-                          sharedItems.reduce(
-                            (sum, item) => sum + item.myShare,
-                            0,
-                          );
-                        const friendTotal =
-                          friendItems.reduce(
-                            (sum, item) => sum + item.price,
-                            0,
-                          ) +
-                          sharedItems.reduce(
-                            (sum, item) => sum + item.friendShare,
-                            0,
-                          );
+                          sharedItems.reduce((sum, item) => sum + item.mine, 0);
+
+                        // Calculate each friend's total
+                        const friendTotals = friendItems.map((items, index) => {
+                          const friendId = `friend${index + 1}`;
+                          return {
+                            id: friendId,
+                            total:
+                              items.reduce((sum, item) => sum + item.price, 0) +
+                              sharedItems.reduce(
+                                (sum, item) => sum + (item[friendId] || 0),
+                                0,
+                              ),
+                          };
+                        });
 
                         // Create CSV content with proper escaping for special characters
                         const itemRows = items
                           .map((item) => {
                             const assignedTo = item.assignedTo;
-                            const displayValue =
-                              assignedTo === "shared"
-                                ? `Shared (You: ${item.splitPercentage?.mine || 50}%, Friend: ${item.splitPercentage?.friend || 50}%)`
-                                : assignedTo;
+                            let displayValue = assignedTo;
+
+                            if (assignedTo === "shared") {
+                              let shareText = "Shared (You: ";
+                              shareText += `${item.splitPercentage?.mine || Math.round(100 / (friendCount + 1))}%`;
+
+                              for (let i = 1; i <= friendCount; i++) {
+                                const friendId = `friend${i}`;
+                                shareText += `, F${i}: ${item.splitPercentage?.[friendId] || Math.round(100 / (friendCount + 1))}%`;
+                              }
+
+                              shareText += ")";
+                              displayValue = shareText;
+                            }
+
                             // Escape quotes in item names
                             const escapedName = item.name.replace(/"/g, '""');
                             return `"${escapedName}",${item.price},"${displayValue || "Unassigned"}"`;
                           })
                           .join("\n");
 
-                        const csvContent = `Item,Price,Assigned To\n${itemRows}\n\nSummary:\nYour Total,${myTotal.toFixed(2)}\nFriend's Total,${friendTotal.toFixed(2)}`;
+                        // Build the summary section
+                        let summaryRows = `Summary:\nYour Total,${myTotal.toFixed(2)}\n`;
+                        friendTotals.forEach((friend, index) => {
+                          summaryRows += `Friend ${index + 1}'s Total,${friend.total.toFixed(2)}\n`;
+                        });
+
+                        const csvContent = `Item,Price,Assigned To\n${itemRows}\n\n${summaryRows}`;
 
                         const blob = new Blob([csvContent], {
                           type: "text/csv;charset=utf-8;",
