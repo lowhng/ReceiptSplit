@@ -32,7 +32,7 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`${inter.className} overscroll-none`}>
+      <body className={`${inter.className} overscroll-none` + " flex"}>
         <Script src="https://api.tempo.new/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" />
         {children}
         <TempoInit />

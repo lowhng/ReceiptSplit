@@ -57,7 +57,7 @@ const ReceiptCapture = ({
 
   return (
     <div className="w-full max-w-md mx-auto bg-background p-4 rounded-lg">
-      <h2 className="text-xl sm:text-2xl font-bold text-center mb-4 sm:mb-6">
+      <h2 className="text-lg sm:text-2xl font-bold text-center mb-3 sm:mb-6">
         Capture Receipt
       </h2>
 
@@ -91,23 +91,23 @@ const ReceiptCapture = ({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <Button
             onClick={handleCameraCapture}
-            className="h-24 sm:h-32 flex flex-col items-center justify-center gap-2"
+            className="h-20 sm:h-32 flex flex-col items-center justify-center gap-2 py-2"
             variant="outline"
           >
-            <Camera className="h-8 w-8 sm:h-10 sm:w-10" />
-            <span>Take Photo</span>
+            <Camera className="h-6 w-6 sm:h-10 sm:w-10" />
+            <span className="text-xs sm:text-sm">Take Photo</span>
           </Button>
 
           <Button
             onClick={handleGalleryUpload}
-            className="h-24 sm:h-32 flex flex-col items-center justify-center gap-2"
+            className="h-20 sm:h-32 flex flex-col items-center justify-center gap-2 py-2"
             variant="outline"
           >
-            <Upload className="h-8 w-8 sm:h-10 sm:w-10" />
-            <span>Upload from Gallery</span>
+            <Upload className="h-6 w-6 sm:h-10 sm:w-10" />
+            <span className="text-xs sm:text-sm">Upload</span>
           </Button>
         </div>
       )}

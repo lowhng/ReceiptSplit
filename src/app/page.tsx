@@ -457,8 +457,8 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-x-3">
+                    <div className="flex items-center gap-x-px mt-[unset] mb-6 mx-[unset]">
                       <Checkbox
                         id="premium"
                         checked={isPremiumEnabled}
@@ -466,14 +466,17 @@ export default function Home() {
                           setIsPremiumEnabled(checked === true)
                         }
                       />
-                      <Label htmlFor="premium" className="text-xs sm:text-sm">
-                        Enable Premium Models (Limited Time Only)
+                      <Label
+                        htmlFor="premium"
+                        className="text-xs sm:text-sm ml-2"
+                      >
+                        Enable Premium Models
                       </Label>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex items-center gap-1 text-xs sm:text-sm"
+                      className="flex items-center justify-center text-xs sm:text-sm w-full sm:w-auto gap-x-1.5 py-1"
                       onClick={() => setLoadDialogOpen(true)}
                     >
                       <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" /> Load
@@ -498,7 +501,7 @@ export default function Home() {
                       >
                         <SelectTrigger
                           id="friend-count"
-                          className="w-full text-xs sm:text-sm h-8 sm:h-10"
+                          className="w-full text-xs sm:text-sm h-9"
                         >
                           <SelectValue placeholder="Select number of friends" />
                         </SelectTrigger>
@@ -514,17 +517,19 @@ export default function Home() {
                     {friendCount > 1 && (
                       <div className="space-y-2 mt-3">
                         <Label className="text-xs sm:text-sm">
-                          Enter your friends' initials (max 5 chars each)
+                          Enter your friends' initials (max 5 chars)
                         </Label>
                         <div className="grid grid-cols-2 gap-2">
                           {Array.from({ length: friendCount }).map((_, i) => (
                             <div key={i} className="space-y-1">
-                              <Label
-                                htmlFor={`friend-${i + 1}`}
-                                className="text-xs"
-                              >
-                                Friend {i + 1}
-                              </Label>
+                              <div className="flex items-center justify-between">
+                                <Label
+                                  htmlFor={`friend-${i + 1}`}
+                                  className="text-xs"
+                                >
+                                  Friend {i + 1}
+                                </Label>
+                              </div>
                               <Input
                                 id={`friend-${i + 1}`}
                                 value={friendInitials[i]}
@@ -534,7 +539,7 @@ export default function Home() {
                                   setFriendInitials(newInitials);
                                 }}
                                 placeholder={`F${i + 1}`}
-                                className="text-xs h-8"
+                                className="text-xs h-9"
                                 inputMode="text"
                                 style={{ fontSize: "16px" }}
                               />
@@ -878,7 +883,6 @@ export default function Home() {
           <p>Another product made with 💖 by Wei Hong</p>
         </div>
       </main>
-
       {/* Save Receipt Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="sm:max-w-md max-w-[95vw]">
@@ -909,7 +913,6 @@ export default function Home() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Load Receipt Dialog */}
       <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
         <DialogContent className="sm:max-w-md max-w-[95vw]">
