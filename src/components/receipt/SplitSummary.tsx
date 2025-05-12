@@ -29,24 +29,13 @@ interface SplitSummaryProps {
 }
 
 const SplitSummary = ({
-  myItems = [
-    { name: "Burger", price: 12.99 },
-    { name: "Fries", price: 4.99 },
-  ],
-  friendItems = [
-    [
-      { name: "Salad", price: 9.99 },
-      { name: "Soda", price: 2.99 },
-    ],
-  ],
-  sharedItems = [
-    { name: "Appetizer", price: 8.99, mine: 4.5, friend1: 4.49 },
-    { name: "Dessert", price: 7.99, mine: 4.0, friend1: 3.99 },
-  ],
-  friendCount = 1,
-  friendInitials = ["F1", "F2", "F3", "F4"],
-  currencySymbol = "$",
-}) => {
+  myItems,
+  friendItems,
+  sharedItems,
+  friendCount,
+  friendInitials,
+  currencySymbol,
+}: SplitSummaryProps) => {
   const [includeTax, setIncludeTax] = useState<boolean>(false);
   const [includeTip, setIncludeTip] = useState<boolean>(false);
   const [taxAmount, setTaxAmount] = useState<number>(0);
@@ -55,18 +44,22 @@ const SplitSummary = ({
 
   // Calculate my subtotal
   const mySubtotal =
-    myItems.reduce((sum, item) => sum + item.price, 0) +
-    sharedItems.reduce((sum, item) => sum + (Number(item.mine) || 0), 0);
+    (myItems ?? []).reduce((sum, item) => sum + item.price, 0) +
+    (sharedItems ?? []).reduce(
+      (sum, item) => sum + (Number(item.mine) || 0),
+      0,
+    );
 
   // Calculate each friend's subtotal
-  const friendSubtotals = friendItems.map((items, index) => {
+  const friendSubtotals = (friendItems ?? []).map((items, index) => {
     const friendId = `friend${index + 1}`;
     return {
       id: friendId,
       subtotal:
         items.reduce((sum, item) => sum + item.price, 0) +
-        sharedItems.reduce(
-          (sum, item) => sum + (Number(item[friendId]) || 0),
+        (sharedItems ?? []).reduce(
+          (sum, item) =>
+            sum + (Number((item as Record<string, number>)[friendId]) || 0),
           0,
         ),
     };
