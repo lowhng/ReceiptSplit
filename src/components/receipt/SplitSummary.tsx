@@ -21,8 +21,7 @@ interface SplitSummaryProps {
     name: string;
     price: number;
     mine: number;
-    friend1: number; // Required property, not optional
-    [key: string]: number | string;
+    [key: `friend${number}`]: number;
   }>;
   friendCount?: number;
   friendInitials?: string[];
@@ -54,10 +53,10 @@ const SplitSummary = ({
   const [tipAmount, setTipAmount] = useState<number>(0);
   const [tipPercentage, setTipPercentage] = useState<number>(0);
 
-  // Calculate subtotals
+  // Calculate my subtotal
   const mySubtotal =
     myItems.reduce((sum, item) => sum + item.price, 0) +
-    sharedItems.reduce((sum, item) => sum + item.mine, 0);
+    sharedItems.reduce((sum, item) => sum + (Number(item.mine) || 0), 0);
 
   // Calculate each friend's subtotal
   const friendSubtotals = friendItems.map((items, index) => {
