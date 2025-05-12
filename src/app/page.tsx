@@ -264,7 +264,7 @@ export default function Home() {
     });
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 px-[8] px-[8] px-[8] py-9">
+    <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9">
       <header className="w-full max-w-4xl mb-4 sm:mb-8 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2">
           ReSplit
@@ -410,7 +410,8 @@ export default function Home() {
                                 }}
                                 placeholder={`F${i + 1}`}
                                 className="text-xs h-8"
-                                maxLength={5}
+                                inputMode="text"
+                                style={{ fontSize: "16px" }}
                               />
                             </div>
                           ))}

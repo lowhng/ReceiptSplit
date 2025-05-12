@@ -135,30 +135,6 @@ const SplitSummary = ({
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
         {/* Original layout preserved including adjustments and final total */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-          <div className="space-y-1 sm:space-y-2">
-            <h3 className="font-medium text-primary text-sm sm:text-base">
-              Your Items
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Subtotal: {formatCurrency(mySubtotal)}
-            </p>
-          </div>
-          <div>
-            {friendSubtotals.map((friend, index) => (
-              <div key={friend.id} className="space-y-1 sm:space-y-2 mb-2">
-                <h3 className="font-medium text-sm sm:text-base">
-                  {friendInitials[index] || `Friend ${index + 1}`}'s Items
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Subtotal: {formatCurrency(friend.subtotal)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
 
         <div className="space-y-3 sm:space-y-4">
           <h3 className="font-medium text-sm sm:text-base">Adjustments</h3>
@@ -203,6 +179,8 @@ const SplitSummary = ({
                 value={taxAmount}
                 onChange={handleTaxChange}
                 className="text-sm h-8 sm:h-10"
+                inputMode="decimal"
+                style={{ fontSize: "16px" }}
               />
             </div>
           )}
@@ -221,6 +199,8 @@ const SplitSummary = ({
                   value={tipAmount}
                   onChange={handleTipChange}
                   className="text-sm h-8 sm:h-10"
+                  inputMode="decimal"
+                  style={{ fontSize: "16px" }}
                 />
               </div>
               <div className="space-y-1 sm:space-y-2">
@@ -236,6 +216,8 @@ const SplitSummary = ({
                     value={tipPercentage}
                     onChange={handleTipPercentageChange}
                     className="text-sm h-8 sm:h-10"
+                    inputMode="decimal"
+                    style={{ fontSize: "16px" }}
                   />
                   <span className="text-xs sm:text-sm">%</span>
                 </div>
@@ -254,12 +236,16 @@ const SplitSummary = ({
             <p className="text-xs sm:text-sm text-muted-foreground">
               Items: {formatCurrency(mySubtotal)}
             </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Tax: {formatCurrency(myTaxProportion)}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Tip: {formatCurrency(myTipProportion)}
-            </p>
+            {myTaxProportion > 0 && (
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Tax: {formatCurrency(myTaxProportion)}
+              </p>
+            )}
+            {myTipProportion > 0 && (
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Tip: {formatCurrency(myTipProportion)}
+              </p>
+            )}
             <p className="font-bold text-sm sm:text-base">
               {formatCurrency(myTotal)}
             </p>
@@ -267,18 +253,24 @@ const SplitSummary = ({
           <div>
             {friendProportions.map((friend, index) => (
               <div key={friend.id} className="space-y-1 mb-3">
-                <h3 className="font-medium text-sm sm:text-base">
+                <h3
+                  className={`font-medium text-sm sm:text-base ${index === 0 ? "text-blue-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
+                >
                   {friendInitials[index] || `Friend ${index + 1}`}'s Total
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Items: {formatCurrency(friend.subtotal)}
                 </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Tax: {formatCurrency(friend.taxProportion)}
-                </p>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Tip: {formatCurrency(friend.tipProportion)}
-                </p>
+                {friend.taxProportion > 0 && (
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Tax: {formatCurrency(friend.taxProportion)}
+                  </p>
+                )}
+                {friend.tipProportion > 0 && (
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Tip: {formatCurrency(friend.tipProportion)}
+                  </p>
+                )}
                 <p className="font-bold text-sm sm:text-base">
                   {formatCurrency(friend.total)}
                 </p>

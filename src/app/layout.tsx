@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Receipt Splitter",
   description: "Scan receipts and split bills with friends easily",
   manifest: "/manifest.json",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
   themeColor: "#000000",
   appleWebApp: {
     capable: true,
