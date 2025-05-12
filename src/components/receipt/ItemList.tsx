@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -90,91 +88,80 @@ const ItemList = ({
   };
 
   return (
-    <div className="w-full bg-background p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Receipt Items</span>
-            <Badge variant="outline" className="ml-2">
-              {items.length} items
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {receiptImage && (
-              <div className="mb-4 p-2 border rounded-md">
-                <img
-                  src={receiptImage}
-                  alt="Receipt"
-                  className="w-full max-h-48 object-contain mx-auto"
-                />
-              </div>
-            )}
-
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className={`p-3 sm:p-4 border rounded-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${getAssignmentColor(item.assignedTo)}`}
-              >
-                <div>
-                  <h3 className="font-medium">{item.name}</h3>
-                  <p className="text-sm text-muted-foreground flex items-center">
-                    <DollarSign className="h-3 w-3 mr-1" />
-                    {item.price.toFixed(2)}
-                  </p>
-                  {item.assignedTo === "shared" && item.splitPercentage && (
-                    <div className="mt-1 text-xs flex items-center">
-                      <Percent className="h-3 w-3 mr-1" />
-                      <span>
-                        You: {item.splitPercentage.mine}% | Friend:{" "}
-                        {item.splitPercentage.friend}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-1 sm:flex sm:space-x-2 w-full sm:w-auto">
-                  <Button
-                    size="sm"
-                    variant={item.assignedTo === "mine" ? "default" : "outline"}
-                    onClick={() => handleAssign(item, "mine")}
-                    className="text-xs sm:text-sm px-1 sm:px-3"
-                  >
-                    <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Mine
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={
-                      item.assignedTo === "friend" ? "default" : "outline"
-                    }
-                    onClick={() => handleAssign(item, "friend")}
-                    className="text-xs sm:text-sm px-1 sm:px-3"
-                  >
-                    <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Friend's
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={
-                      item.assignedTo === "shared" ? "default" : "outline"
-                    }
-                    onClick={() => handleAssign(item, "shared")}
-                    className="text-xs sm:text-sm px-1 sm:px-3"
-                  >
-                    <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Shared
-                  </Button>
-                </div>
-              </div>
-            ))}
-
-            {items.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No items found. Please scan a receipt first.
-              </div>
-            )}
+    <div className="w-full bg-background">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="font-semibold text-base">Receipt Items</h2>
+        <Badge variant="outline" className="ml-2">
+          {items.length} items
+        </Badge>
+      </div>
+      <div className="space-y-4">
+        {receiptImage && (
+          <div className="mb-4 p-2 border rounded-md">
+            <img
+              src={receiptImage}
+              alt="Receipt"
+              className="w-full max-h-48 object-contain mx-auto"
+            />
           </div>
-        </CardContent>
-      </Card>
+        )}
 
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={`p-3 sm:p-4 border rounded-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${getAssignmentColor(item.assignedTo)}`}
+          >
+            <div>
+              <h3 className="font-medium">{item.name}</h3>
+              <p className="text-sm text-muted-foreground flex items-center">
+                <DollarSign className="h-3 w-3 mr-1" />
+                {item.price.toFixed(2)}
+              </p>
+              {item.assignedTo === "shared" && item.splitPercentage && (
+                <div className="mt-1 text-xs flex items-center">
+                  <Percent className="h-3 w-3 mr-1" />
+                  <span>
+                    You: {item.splitPercentage.mine}% | Friend:{" "}
+                    {item.splitPercentage.friend}%
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-1 sm:flex sm:space-x-2 w-full sm:w-auto">
+              <Button
+                size="sm"
+                variant={item.assignedTo === "mine" ? "default" : "outline"}
+                onClick={() => handleAssign(item, "mine")}
+                className="text-xs sm:text-sm px-1 sm:px-3"
+              >
+                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Mine
+              </Button>
+              <Button
+                size="sm"
+                variant={item.assignedTo === "friend" ? "default" : "outline"}
+                onClick={() => handleAssign(item, "friend")}
+                className="text-xs sm:text-sm px-1 sm:px-3"
+              >
+                <User className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Friend's
+              </Button>
+              <Button
+                size="sm"
+                variant={item.assignedTo === "shared" ? "default" : "outline"}
+                onClick={() => handleAssign(item, "shared")}
+                className="text-xs sm:text-sm px-1 sm:px-3"
+              >
+                <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" /> Shared
+              </Button>
+            </div>
+          </div>
+        ))}
+
+        {items.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            No items found. Please scan a receipt first.
+          </div>
+        )}
+      </div>
       <Dialog open={splitDialogOpen} onOpenChange={setSplitDialogOpen}>
         <DialogContent className="sm:max-w-md max-w-[95vw]">
           <DialogHeader>
