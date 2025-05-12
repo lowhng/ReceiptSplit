@@ -21,6 +21,7 @@ interface SplitSummaryProps {
     name: string;
     price: number;
     mine: number;
+    friend1: number; // Required property, not optional
     [key: string]: number | string;
   }>;
   friendCount?: number;

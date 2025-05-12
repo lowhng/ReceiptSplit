@@ -223,7 +223,11 @@ export default function Home() {
   const sharedItems = items
     .filter((item) => item.assignedTo === "shared")
     .map((item) => {
-      const shares: Record<string, number> = {};
+      const shares: Record<string, number> = {
+        // Initialize with required properties to satisfy TypeScript
+        mine: 0,
+        friend1: 0,
+      };
 
       if (item.splitPercentage) {
         // Use the defined split percentages
@@ -245,10 +249,16 @@ export default function Home() {
         }
       }
 
+      // Always ensure friend1 exists with a value, even if friendCount is 0
+      if (!shares.friend1) {
+        shares.friend1 = 0;
+      }
+
       return {
         name: item.name,
         price: item.price,
         mine: shares.mine,
+        friend1: shares.friend1, // Explicitly include friend1 to satisfy TypeScript
         ...shares,
       };
     });
@@ -483,19 +493,23 @@ export default function Home() {
                             );
 
                           // Calculate each friend's total
-                          const friendTotals = friendItems.map(
+                          const friendSubtotals = friendItems.map(
                             (items, index) => {
                               const friendId = `friend${index + 1}`;
                               return {
                                 id: friendId,
-                                total:
+                                subtotal:
                                   items.reduce(
                                     (sum, item) => sum + item.price,
                                     0,
                                   ) +
                                   sharedItems.reduce(
                                     (sum, item) =>
-                                      sum + (Number(item[friendId]) || 0),
+                                      sum +
+                                      Number(
+                                        item[friendId as keyof typeof item] ??
+                                          0,
+                                      ),
                                     0,
                                   ),
                               };
@@ -504,8 +518,8 @@ export default function Home() {
 
                           // Format the text for sharing
                           let shareText = `My total: ${myTotal.toFixed(2)}\n`;
-                          friendTotals.forEach((friend, index) => {
-                            shareText += `Friend ${index + 1}'s total: ${friend.total.toFixed(2)}\n`;
+                          friendSubtotals.forEach((friend, index) => {
+                            shareText += `Friend ${index + 1}'s total: ${friend.subtotal.toFixed(2)}\n`;
                           });
 
                           navigator
@@ -542,19 +556,27 @@ export default function Home() {
                           sharedItems.reduce((sum, item) => sum + item.mine, 0);
 
                         // Calculate each friend's total
-                        const friendTotals = friendItems.map((items, index) => {
-                          const friendId = `friend${index + 1}`;
-                          return {
-                            id: friendId,
-                            total:
-                              items.reduce((sum, item) => sum + item.price, 0) +
-                              sharedItems.reduce(
-                                (sum, item) =>
-                                  sum + (Number(item[friendId]) || 0),
-                                0,
-                              ),
-                          };
-                        });
+                        const friendSubtotals = friendItems.map(
+                          (items, index) => {
+                            const friendId = `friend${index + 1}`;
+                            return {
+                              id: friendId,
+                              subtotal:
+                                items.reduce(
+                                  (sum, item) => sum + item.price,
+                                  0,
+                                ) +
+                                sharedItems.reduce(
+                                  (sum, item) =>
+                                    sum +
+                                    Number(
+                                      item[friendId as keyof typeof item] ?? 0,
+                                    ),
+                                  0,
+                                ),
+                            };
+                          },
+                        );
 
                         // Create CSV content with proper escaping for special characters
                         const itemRows = items
@@ -583,8 +605,8 @@ export default function Home() {
 
                         // Build the summary section
                         let summaryRows = `Summary:\nYour Total,${myTotal.toFixed(2)}\n`;
-                        friendTotals.forEach((friend, index) => {
-                          summaryRows += `Friend ${index + 1}'s Total,${friend.total.toFixed(2)}\n`;
+                        friendSubtotals.forEach((friend, index) => {
+                          summaryRows += `Friend ${index + 1}'s Total,${friend.subtotal.toFixed(2)}\n`;
                         });
 
                         const csvContent = `Item,Price,Assigned To\n${itemRows}\n\n${summaryRows}`;

@@ -264,7 +264,10 @@ const ItemList = ({
 
         {items.length > 0 && (
           <div className="mt-6 flex justify-center">
-            <Button onClick={onGoToSummary} className="w-full sm:w-auto">
+            <Button
+              onClick={() => onGoToSummary()}
+              className="w-full sm:w-auto"
+            >
               Go to Split Summary
             </Button>
           </div>
