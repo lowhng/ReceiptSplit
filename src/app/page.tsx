@@ -13,11 +13,7 @@ import ReceiptCapture from "@/components/receipt/ReceiptCapture";
 import ItemList from "@/components/receipt/ItemList";
 import SplitSummary from "@/components/receipt/SplitSummary";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  ExtractedItem,
-  openRouterModels,
-  OpenRouterModel,
-} from "@/lib/openrouter";
+import { ExtractedItem, openRouterModels } from "@/lib/openrouter";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Select,
@@ -29,21 +25,57 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Share2, Download, Image } from "lucide-react";
-import dynamic from "next/dynamic";
-
+import {
+  Share2,
+  Download,
+  Image,
+  Save,
+  FolderOpen,
+  Trash2,
+} from "lucide-react";
 import { useRef } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // We'll use direct import for html-to-image and handle it client-side only
 // No need for dynamic import as we're using it only in client-side event handlers
+
+interface SavedReceipt {
+  id: string;
+  name: string;
+  date: string;
+  receiptImage: string | null;
+  items: Array<{
+    id: string;
+    name: string;
+    price: number;
+    assignedTo:
+      | "mine"
+      | "friend1"
+      | "friend2"
+      | "friend3"
+      | "friend4"
+      | "shared"
+      | null;
+    splitPercentage?: Record<string, number>;
+  }>;
+  friendCount: number;
+  friendInitials: string[];
+  currency: string;
+  currencySymbol: string;
+}
 
 export default function Home() {
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("capture");
-  const [selectedModel, setSelectedModel] = useState<string>(
-    "meta-llama/llama-4-maverick:free",
-  );
+  // Model is automatically selected based on premium status
   const [isPremiumEnabled, setIsPremiumEnabled] = useState(false);
   const [friendCount, setFriendCount] = useState<number>(1);
   const [friendInitials, setFriendInitials] = useState<string[]>([
@@ -70,6 +102,10 @@ export default function Home() {
       splitPercentage?: Record<string, number>;
     }>
   >([]);
+  const [savedReceipts, setSavedReceipts] = useState<SavedReceipt[]>([]);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [receiptName, setReceiptName] = useState("");
   const { toast } = useToast();
 
   // Detect user's location and set default currency
@@ -104,7 +140,117 @@ export default function Home() {
     };
 
     detectUserCurrency();
+    loadSavedReceipts();
   }, []);
+
+  // Load saved receipts from local storage
+  const loadSavedReceipts = () => {
+    if (typeof window !== "undefined") {
+      const savedReceiptsData = localStorage.getItem("resplit-saved-receipts");
+      if (savedReceiptsData) {
+        try {
+          const parsedData = JSON.parse(savedReceiptsData);
+          setSavedReceipts(parsedData);
+        } catch (error) {
+          console.error("Error parsing saved receipts:", error);
+          setSavedReceipts([]);
+        }
+      }
+    }
+  };
+
+  // Save current receipt to local storage
+  const saveCurrentReceipt = () => {
+    if (!items.length) {
+      toast({
+        title: "Nothing to save",
+        description: "Please scan a receipt first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaveDialogOpen(true);
+  };
+
+  const handleSaveConfirm = () => {
+    if (!receiptName.trim()) {
+      toast({
+        title: "Name required",
+        description: "Please enter a name for this receipt",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newReceipt: SavedReceipt = {
+      id: `receipt-${Date.now()}`,
+      name: receiptName,
+      date: new Date().toISOString(),
+      receiptImage,
+      items,
+      friendCount,
+      friendInitials,
+      currency,
+      currencySymbol,
+    };
+
+    const updatedReceipts = [...savedReceipts, newReceipt];
+    setSavedReceipts(updatedReceipts);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "resplit-saved-receipts",
+        JSON.stringify(updatedReceipts),
+      );
+    }
+
+    toast({
+      title: "Receipt saved",
+      description: `"${receiptName}" has been saved to your device`,
+    });
+
+    setSaveDialogOpen(false);
+    setReceiptName("");
+  };
+
+  // Load a saved receipt
+  const loadReceipt = (receipt: SavedReceipt) => {
+    setReceiptImage(receipt.receiptImage);
+    setItems(receipt.items);
+    setFriendCount(receipt.friendCount);
+    setFriendInitials(receipt.friendInitials);
+    setCurrency(receipt.currency);
+    setCurrencySymbol(receipt.currencySymbol);
+
+    setLoadDialogOpen(false);
+    setActiveTab("items");
+
+    toast({
+      title: "Receipt loaded",
+      description: `"${receipt.name}" has been loaded`,
+    });
+  };
+
+  // Delete a saved receipt
+  const deleteReceipt = (id: string) => {
+    const updatedReceipts = savedReceipts.filter(
+      (receipt) => receipt.id !== id,
+    );
+    setSavedReceipts(updatedReceipts);
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "resplit-saved-receipts",
+        JSON.stringify(updatedReceipts),
+      );
+    }
+
+    toast({
+      title: "Receipt deleted",
+      description: "The receipt has been removed from your device",
+    });
+  };
 
   const handleReceiptCaptured = async (imageData: string) => {
     setReceiptImage(imageData);
@@ -117,7 +263,12 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageData, modelId: selectedModel }),
+        body: JSON.stringify({
+          imageData,
+          modelId: isPremiumEnabled
+            ? "google/gemini-2.5-flash-preview"
+            : "meta-llama/llama-4-maverick:free",
+        }),
       });
 
       if (!response.ok) {
@@ -306,7 +457,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  <div className="space-y-3 sm:space-y-4">
+                  <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="premium"
@@ -316,44 +467,18 @@ export default function Home() {
                         }
                       />
                       <Label htmlFor="premium" className="text-xs sm:text-sm">
-                        Enable Premium Models
+                        Enable Premium Models (Limited Time Only)
                       </Label>
                     </div>
-
-                    <div className="space-y-1 sm:space-y-2">
-                      <Label
-                        htmlFor="model-select"
-                        className="text-xs sm:text-sm"
-                      >
-                        Select Model
-                      </Label>
-                      <Select
-                        value={selectedModel}
-                        onValueChange={setSelectedModel}
-                      >
-                        <SelectTrigger
-                          id="model-select"
-                          className="w-full text-xs sm:text-sm h-8 sm:h-10"
-                        >
-                          <SelectValue placeholder="Select a model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {openRouterModels
-                            .filter(
-                              (model) => !model.isPremium || isPremiumEnabled,
-                            )
-                            .map((model) => (
-                              <SelectItem
-                                key={model.id}
-                                value={model.id}
-                                className="text-xs sm:text-sm"
-                              >
-                                {model.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 text-xs sm:text-sm"
+                      onClick={() => setLoadDialogOpen(true)}
+                    >
+                      <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" /> Load
+                      Receipt
+                    </Button>
                   </div>
 
                   <div className="space-y-4">
@@ -551,6 +676,23 @@ export default function Home() {
                     <Button
                       variant="outline"
                       className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                      onClick={saveCurrentReceipt}
+                    >
+                      <Save className="h-3 w-3 sm:h-4 sm:w-4" /> Save Receipt
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className="flex items-center justify-center gap-2 text-xs sm:text-sm"
+                      onClick={() => setLoadDialogOpen(true)}
+                    >
+                      <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" /> Load
+                      Receipt
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className="flex items-center justify-center gap-2 text-xs sm:text-sm"
                       onClick={() => {
                         const myTotal =
                           myItems.reduce((sum, item) => sum + item.price, 0) +
@@ -732,9 +874,91 @@ export default function Home() {
               </SelectContent>
             </Select>
           </div>
-          <p>Receipt Splitter App &copy; {new Date().getFullYear()}</p>
+          <p>ReSplit App &copy; {new Date().getFullYear()}</p>
+          <p>Another product made with 💖 by Wei Hong</p>
         </div>
       </main>
+
+      {/* Save Receipt Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Save Receipt</DialogTitle>
+            <DialogDescription>
+              Enter a name to save this receipt for later use.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="receipt-name" className="text-sm mb-2 block">
+              Receipt Name
+            </Label>
+            <Input
+              id="receipt-name"
+              value={receiptName}
+              onChange={(e) => setReceiptName(e.target.value)}
+              placeholder="e.g., Dinner with friends"
+              className="w-full"
+              style={{ fontSize: "16px" }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveConfirm}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Receipt Dialog */}
+      <Dialog open={loadDialogOpen} onOpenChange={setLoadDialogOpen}>
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Saved Receipts</DialogTitle>
+            <DialogDescription>Select a receipt to load</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 max-h-[60vh] overflow-y-auto">
+            {savedReceipts.length > 0 ? (
+              <div className="space-y-3">
+                {savedReceipts.map((receipt) => (
+                  <div
+                    key={receipt.id}
+                    className="p-3 border rounded-md flex justify-between items-center hover:bg-accent cursor-pointer"
+                    onClick={() => loadReceipt(receipt)}
+                  >
+                    <div>
+                      <h3 className="font-medium">{receipt.name}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(receipt.date).toLocaleDateString()} •{" "}
+                        {receipt.items.length} items
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteReceipt(receipt.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No saved receipts found
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLoadDialogOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

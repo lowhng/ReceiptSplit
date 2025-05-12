@@ -159,7 +159,7 @@ const ItemList = ({
   return (
     <div className="w-full bg-background">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-semibold text-base">Assign Items</h2>
+        <h2 className="font-semibold text-base">Receipt Items</h2>
         <Badge variant="outline" className="ml-2">
           {items.length} items
         </Badge>
@@ -273,7 +273,6 @@ const ItemList = ({
           </div>
         )}
       </div>
-
       {/* Only show split dialog when there's 1 friend */}
       {friendCount === 1 && (
         <Dialog open={splitDialogOpen} onOpenChange={setSplitDialogOpen}>

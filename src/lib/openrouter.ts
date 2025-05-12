@@ -85,7 +85,7 @@ export async function extractItemsFromReceipt(
               content: [
                 {
                   type: "text",
-                  text: 'Extract all items and their prices from this receipt image. Return ONLY a JSON array with objects that have "name" and "price" properties. The price should be a number, not a string. Do not include any explanations or other text.',
+                  text: 'Extract all items and their prices from this receipt image. Return ONLY a JSON array with objects that have "name" and "price" properties. The price should be a number, not a string. If there is a discount applied, use the discounted price. Do not include tax as an item. Do not include any explanations or other text.',
                 },
                 {
                   type: "image_url",

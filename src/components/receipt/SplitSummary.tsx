@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -254,7 +254,7 @@ const SplitSummary = ({
             {friendProportions.map((friend, index) => (
               <div key={friend.id} className="space-y-1 mb-3">
                 <h3
-                  className={`font-medium text-sm sm:text-base ${index === 0 ? "text-blue-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
+                  className={`font-medium text-sm sm:text-base ${index === 0 ? "text-green-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
                 >
                   {friendInitials[index] || `Friend ${index + 1}`}'s Total
                 </h3>
