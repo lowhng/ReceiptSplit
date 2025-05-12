@@ -24,6 +24,8 @@ interface SplitSummaryProps {
     [key: string]: number | string;
   }>;
   friendCount?: number;
+  friendInitials?: string[];
+  currencySymbol?: string;
 }
 
 const SplitSummary = ({
@@ -42,6 +44,8 @@ const SplitSummary = ({
     { name: "Dessert", price: 7.99, mine: 4.0, friend1: 3.99 },
   ],
   friendCount = 1,
+  friendInitials = ["F1", "F2", "F3", "F4"],
+  currencySymbol = "$",
 }) => {
   const [includeTax, setIncludeTax] = useState<boolean>(false);
   const [includeTip, setIncludeTip] = useState<boolean>(false);
@@ -61,7 +65,10 @@ const SplitSummary = ({
       id: friendId,
       subtotal:
         items.reduce((sum, item) => sum + item.price, 0) +
-        sharedItems.reduce((sum, item) => sum + (item[friendId] || 0), 0),
+        sharedItems.reduce(
+          (sum, item) => sum + (Number(item[friendId]) || 0),
+          0,
+        ),
     };
   });
 
@@ -135,10 +142,8 @@ const SplitSummary = ({
 
   // Format currency
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+    // Just use the currency symbol and format the number
+    return `${currencySymbol}${amount.toFixed(2)}`;
   };
 
   return (
@@ -165,7 +170,7 @@ const SplitSummary = ({
                 <h3
                   className={`font-medium text-sm sm:text-base ${index === 0 ? "text-blue-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
                 >
-                  Friend {index + 1}'s Items
+                  {friendInitials[index] || `Friend ${index + 1}`}'s Items
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Subtotal: {formatCurrency(friend.subtotal)}
@@ -291,7 +296,7 @@ const SplitSummary = ({
                 <h3
                   className={`font-medium text-sm sm:text-base ${index === 0 ? "text-blue-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
                 >
-                  Friend {index + 1}'s Total
+                  {friendInitials[index] || `Friend ${index + 1}`}'s Total
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Items: {formatCurrency(friend.subtotal)}

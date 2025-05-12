@@ -33,6 +33,8 @@ interface ItemListProps {
   items?: Item[];
   receiptImage?: string | null;
   friendCount?: number;
+  friendInitials?: string[];
+  currencySymbol?: string;
   onItemAssign?: (
     itemId: string,
     assignedTo:
@@ -48,6 +50,7 @@ interface ItemListProps {
     itemId: string,
     percentages: Record<string, number>,
   ) => void;
+  onGoToSummary?: () => void;
 }
 
 const ItemList = ({
@@ -59,8 +62,11 @@ const ItemList = ({
   ],
   receiptImage = null,
   friendCount = 1,
+  friendInitials = ["F1", "F2", "F3", "F4"],
+  currencySymbol = "$",
   onItemAssign = () => {},
   onSplitPercentageChange = () => {},
+  onGoToSummary = () => {},
 }: ItemListProps) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [splitDialogOpen, setSplitDialogOpen] = useState(false);
@@ -178,6 +184,7 @@ const ItemList = ({
               <h3 className="font-medium">{item.name}</h3>
               <p className="text-sm text-muted-foreground flex items-center">
                 <DollarSign className="h-3 w-3 mr-1" />
+                {currencySymbol}
                 {item.price.toFixed(2)}
               </p>
               {item.assignedTo === "shared" && item.splitPercentage && (
@@ -193,7 +200,11 @@ const ItemList = ({
                       .map(([key, value], index) => (
                         <span key={key}>
                           {" "}
-                          | F{key.replace("friend", "")}: {value}%
+                          |{" "}
+                          {friendInitials[
+                            parseInt(key.replace("friend", "")) - 1
+                          ] || key.replace("friend", "F")}
+                          : {value}%
                         </span>
                       ))}
                   </span>
@@ -207,7 +218,7 @@ const ItemList = ({
                 onClick={() => handleAssign(item, "mine")}
                 className="text-xs px-1 sm:px-2"
               >
-                <User className="h-3 w-3 mr-1" /> Me
+                <User className="h-3 w-3 mr-1" /> Mine
               </Button>
 
               {/* Generate buttons for each friend */}
@@ -227,7 +238,8 @@ const ItemList = ({
                     onClick={() => handleAssign(item, friendId)}
                     className="text-xs px-1 sm:px-2"
                   >
-                    <User className="h-3 w-3 mr-1" /> F{i + 1}
+                    <User className="h-3 w-3 mr-1" />{" "}
+                    {friendInitials[i] || `F${i + 1}`}
                   </Button>
                 );
               })}
@@ -238,7 +250,7 @@ const ItemList = ({
                 onClick={() => handleAssign(item, "shared")}
                 className="text-xs px-1 sm:px-2"
               >
-                <Users className="h-3 w-3 mr-1" /> S
+                <Users className="h-3 w-3 mr-1" /> Shared
               </Button>
             </div>
           </div>
@@ -247,6 +259,14 @@ const ItemList = ({
         {items.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No items found. Please scan a receipt first.
+          </div>
+        )}
+
+        {items.length > 0 && (
+          <div className="mt-6 flex justify-center">
+            <Button onClick={onGoToSummary} className="w-full sm:w-auto">
+              Go to Split Summary
+            </Button>
           </div>
         )}
       </div>
@@ -268,7 +288,8 @@ const ItemList = ({
                       Your percentage: {splitPercentages.mine || 50}%
                     </Label>
                     <Label className="text-sm">
-                      Friend's percentage: {splitPercentages.friend1 || 50}%
+                      {friendInitials[0] || "Friend"}'s percentage:{" "}
+                      {splitPercentages.friend1 || 50}%
                     </Label>
                   </div>
                   <Slider
@@ -291,7 +312,7 @@ const ItemList = ({
                       Your share
                     </p>
                     <p className="text-base sm:text-lg font-bold">
-                      $
+                      {currencySymbol}
                       {selectedItem
                         ? (
                             (selectedItem.price *
@@ -303,10 +324,10 @@ const ItemList = ({
                   </div>
                   <div className="p-3 sm:p-4 border rounded-md text-center">
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      Friend's share
+                      {friendInitials[0] || "Friend"}'s share
                     </p>
                     <p className="text-base sm:text-lg font-bold">
-                      $
+                      {currencySymbol}
                       {selectedItem
                         ? (
                             (selectedItem.price *
@@ -344,7 +365,7 @@ const ItemList = ({
                     }
                     className="text-xs sm:text-sm px-1 sm:px-3"
                   >
-                    Friend pays
+                    {friendInitials[0] || "Friend"} pays
                   </Button>
                 </div>
               </div>

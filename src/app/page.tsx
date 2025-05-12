@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -45,6 +46,14 @@ export default function Home() {
   );
   const [isPremiumEnabled, setIsPremiumEnabled] = useState(false);
   const [friendCount, setFriendCount] = useState<number>(1);
+  const [friendInitials, setFriendInitials] = useState<string[]>([
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+  ]);
+  const [currency, setCurrency] = useState<string>("USD");
+  const [currencySymbol, setCurrencySymbol] = useState<string>("$");
   const [items, setItems] = useState<
     Array<{
       id: string;
@@ -62,6 +71,40 @@ export default function Home() {
     }>
   >([]);
   const { toast } = useToast();
+
+  // Detect user's location and set default currency
+  useEffect(() => {
+    const detectUserCurrency = async () => {
+      try {
+        const response = await fetch("https://ipapi.co/json/");
+        const data = await response.json();
+        if (data.currency) {
+          setCurrency(data.currency);
+          // Set currency symbol based on currency code
+          const symbols: Record<string, string> = {
+            USD: "$",
+            EUR: "€",
+            GBP: "£",
+            JPY: "¥",
+            NZD: "$",
+            AUD: "$",
+            CAD: "$",
+            CHF: "CHF",
+            CNY: "¥",
+            INR: "₹",
+          };
+          setCurrencySymbol(symbols[data.currency] || "$");
+        }
+      } catch (error) {
+        console.error("Error detecting user currency:", error);
+        // Default to USD if detection fails
+        setCurrency("USD");
+        setCurrencySymbol("$");
+      }
+    };
+
+    detectUserCurrency();
+  }, []);
 
   const handleReceiptCaptured = async (imageData: string) => {
     setReceiptImage(imageData);
@@ -205,21 +248,21 @@ export default function Home() {
       return {
         name: item.name,
         price: item.price,
+        mine: shares.mine,
         ...shares,
       };
     });
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center p-3 sm:p-4 md:p-8">
+    <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 px-[8] px-[8] px-[8] py-9">
       <header className="w-full max-w-4xl mb-4 sm:mb-8 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2">
-          Receipt Splitter
+          ReSplit
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
           Scan receipts and split bills with friends easily
         </p>
       </header>
-
       <main className="w-full max-w-4xl flex flex-col gap-4 sm:gap-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 mb-4 sm:mb-6 w-full">
@@ -313,9 +356,10 @@ export default function Home() {
                       </Label>
                       <Select
                         value={friendCount.toString()}
-                        onValueChange={(value) =>
-                          setFriendCount(parseInt(value))
-                        }
+                        onValueChange={(value) => {
+                          const count = parseInt(value);
+                          setFriendCount(count);
+                        }}
                       >
                         <SelectTrigger
                           id="friend-count"
@@ -331,6 +375,38 @@ export default function Home() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {friendCount > 1 && (
+                      <div className="space-y-2 mt-3">
+                        <Label className="text-xs sm:text-sm">
+                          Enter your friends' initials (max 5 chars each)
+                        </Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Array.from({ length: friendCount }).map((_, i) => (
+                            <div key={i} className="space-y-1">
+                              <Label
+                                htmlFor={`friend-${i + 1}`}
+                                className="text-xs"
+                              >
+                                Friend {i + 1}
+                              </Label>
+                              <Input
+                                id={`friend-${i + 1}`}
+                                value={friendInitials[i]}
+                                onChange={(e) => {
+                                  const newInitials = [...friendInitials];
+                                  newInitials[i] = e.target.value.slice(0, 5);
+                                  setFriendInitials(newInitials);
+                                }}
+                                placeholder={`F${i + 1}`}
+                                className="text-xs h-8"
+                                maxLength={5}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <ReceiptCapture
                       onReceiptCaptured={handleReceiptCaptured}
@@ -357,8 +433,11 @@ export default function Home() {
                     receiptImage={receiptImage}
                     items={items}
                     friendCount={friendCount}
+                    friendInitials={friendInitials}
+                    currencySymbol={currencySymbol}
                     onItemAssign={handleItemAssign}
                     onSplitPercentageChange={handleSplitPercentageChange}
+                    onGoToSummary={() => setActiveTab("summary")}
                   />
                 ) : (
                   <div className="text-center py-8">
@@ -385,6 +464,8 @@ export default function Home() {
                       friendItems={friendItems}
                       sharedItems={sharedItems}
                       friendCount={friendCount}
+                      friendInitials={friendInitials}
+                      currencySymbol={currencySymbol}
                     />
                   </div>
 
@@ -413,7 +494,8 @@ export default function Home() {
                                     0,
                                   ) +
                                   sharedItems.reduce(
-                                    (sum, item) => sum + (item[friendId] || 0),
+                                    (sum, item) =>
+                                      sum + (Number(item[friendId]) || 0),
                                     0,
                                   ),
                               };
@@ -467,7 +549,8 @@ export default function Home() {
                             total:
                               items.reduce((sum, item) => sum + item.price, 0) +
                               sharedItems.reduce(
-                                (sum, item) => sum + (item[friendId] || 0),
+                                (sum, item) =>
+                                  sum + (Number(item[friendId]) || 0),
                                 0,
                               ),
                           };
@@ -477,7 +560,7 @@ export default function Home() {
                         const itemRows = items
                           .map((item) => {
                             const assignedTo = item.assignedTo;
-                            let displayValue = assignedTo;
+                            let displayValue: string = assignedTo || "";
 
                             if (assignedTo === "shared") {
                               let shareText = "Shared (You: ";
@@ -584,6 +667,48 @@ export default function Home() {
         </Tabs>
 
         <div className="text-center text-xs sm:text-sm text-muted-foreground mt-6 sm:mt-8">
+          <div className="flex justify-center items-center mb-2">
+            <Select
+              value={currency}
+              onValueChange={(value) => {
+                setCurrency(value);
+                // Set currency symbol based on currency code
+                const symbols: Record<string, string> = {
+                  USD: "$",
+                  EUR: "€",
+                  GBP: "£",
+                  JPY: "¥",
+                  NZD: "$",
+                  AUD: "$",
+                  CAD: "$",
+                  CHF: "CHF",
+                  CNY: "¥",
+                  INR: "₹",
+                  SGD: "$",
+                  MYR: "RM",
+                };
+                setCurrencySymbol(symbols[value] || "$");
+              }}
+            >
+              <SelectTrigger className="w-24 h-7 text-xs">
+                <SelectValue placeholder="Currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD ($)</SelectItem>
+                <SelectItem value="EUR">EUR (€)</SelectItem>
+                <SelectItem value="GBP">GBP (£)</SelectItem>
+                <SelectItem value="JPY">JPY (¥)</SelectItem>
+                <SelectItem value="NZD">NZD ($)</SelectItem>
+                <SelectItem value="AUD">AUD ($)</SelectItem>
+                <SelectItem value="CAD">CAD ($)</SelectItem>
+                <SelectItem value="CHF">CHF</SelectItem>
+                <SelectItem value="CNY">CNY (¥)</SelectItem>
+                <SelectItem value="INR">INR (₹)</SelectItem>
+                <SelectItem value="SGD">SGD ($)</SelectItem>
+                <SelectItem value="MYR">MYR (RM)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <p>Receipt Splitter App &copy; {new Date().getFullYear()}</p>
         </div>
       </main>

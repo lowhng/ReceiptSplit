@@ -119,6 +119,9 @@ export async function extractItemsFromReceipt(
         return parsedContent.items;
       } else if (Array.isArray(parsedContent)) {
         return parsedContent;
+      } else if (typeof parsedContent === "object" && parsedContent !== null) {
+        // Handle case where the response might be a single object instead of an array
+        return [parsedContent];
       } else {
         console.error("Unexpected response format:", parsedContent);
         return [];
