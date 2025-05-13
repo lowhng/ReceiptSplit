@@ -183,7 +183,6 @@ const ItemList = ({
             <div>
               <h3 className="font-medium">{item.name}</h3>
               <p className="text-sm text-muted-foreground flex items-center">
-                <DollarSign className="h-3 w-3 mr-1" />
                 {currencySymbol}
                 {item.price.toFixed(2)}
               </p>
@@ -192,8 +191,10 @@ const ItemList = ({
                   <Percent className="h-3 w-3 mr-1" />
                   <span>
                     You:{" "}
-                    {item.splitPercentage.mine ||
-                      Math.round(100 / (friendCount + 1))}
+                    {(
+                      item.splitPercentage.mine ||
+                      Math.round(100 / (friendCount + 1))
+                    ).toFixed(1)}
                     %
                     {Object.entries(item.splitPercentage)
                       .filter(([key]) => key !== "mine")
@@ -204,7 +205,7 @@ const ItemList = ({
                           {friendInitials[
                             parseInt(key.replace("friend", "")) - 1
                           ] || key.replace("friend", "F")}
-                          : {value}%
+                          : {Number(value).toFixed(1)}%
                         </span>
                       ))}
                   </span>

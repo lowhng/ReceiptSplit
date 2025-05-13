@@ -86,6 +86,11 @@ export default function Home() {
   ]);
   const [currency, setCurrency] = useState<string>("USD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("$");
+  const [taxAmount, setTaxAmount] = useState(0);
+  const [tipAmount, setTipAmount] = useState(0);
+  const [includeTax, setIncludeTax] = useState(false);
+  const [includeTip, setIncludeTip] = useState(false);
+  const [tipPercentage, setTipPercentage] = useState(0);
   const [items, setItems] = useState<
     Array<{
       id: string;
@@ -607,6 +612,16 @@ export default function Home() {
                       friendCount={friendCount}
                       friendInitials={friendInitials}
                       currencySymbol={currencySymbol}
+                      taxAmount={taxAmount}
+                      setTaxAmount={setTaxAmount}
+                      tipAmount={tipAmount}
+                      setTipAmount={setTipAmount}
+                      includeTax={includeTax}
+                      setIncludeTax={setIncludeTax}
+                      includeTip={includeTip}
+                      setIncludeTip={setIncludeTip}
+                      tipPercentage={tipPercentage}
+                      setTipPercentage={setTipPercentage}
                     />
                   </div>
 
@@ -734,11 +749,11 @@ export default function Home() {
 
                             if (assignedTo === "shared") {
                               let shareText = "Shared (You: ";
-                              shareText += `${item.splitPercentage?.mine || Math.round(100 / (friendCount + 1))}%`;
+                              shareText += `${(item.splitPercentage?.mine || Math.round(100 / (friendCount + 1))).toFixed(1)}%`;
 
                               for (let i = 1; i <= friendCount; i++) {
                                 const friendId = `friend${i}`;
-                                shareText += `, F${i}: ${item.splitPercentage?.[friendId] || Math.round(100 / (friendCount + 1))}%`;
+                                shareText += `, F${i}: ${(item.splitPercentage?.[friendId] || Math.round(100 / (friendCount + 1))).toFixed(1)}%`;
                               }
 
                               shareText += ")";

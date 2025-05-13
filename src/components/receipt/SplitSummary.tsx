@@ -22,6 +22,16 @@ interface SplitSummaryProps {
   friendCount?: number;
   friendInitials?: string[];
   currencySymbol?: string;
+  taxAmount?: number;
+  setTaxAmount?: (value: number) => void;
+  tipAmount?: number;
+  setTipAmount?: (value: number) => void;
+  includeTax?: boolean;
+  setIncludeTax?: (value: boolean) => void;
+  includeTip?: boolean;
+  setIncludeTip?: (value: boolean) => void;
+  tipPercentage?: number;
+  setTipPercentage?: (value: number) => void;
 }
 
 const SplitSummary = ({
@@ -42,12 +52,18 @@ const SplitSummary = ({
   friendCount = 1,
   friendInitials = ["F1"],
   currencySymbol = "$",
+  taxAmount = 0,
+  setTaxAmount = () => {},
+  tipAmount = 0,
+  setTipAmount = () => {},
+  includeTax = false,
+  setIncludeTax = () => {},
+  includeTip = false,
+  setIncludeTip = () => {},
+  tipPercentage = 0,
+  setTipPercentage = () => {},
 }: SplitSummaryProps) => {
-  const [includeTax, setIncludeTax] = useState(false);
-  const [includeTip, setIncludeTip] = useState(false);
-  const [taxAmount, setTaxAmount] = useState(0);
-  const [tipAmount, setTipAmount] = useState(0);
-  const [tipPercentage, setTipPercentage] = useState(0);
+  // States are now passed as props from the parent component
 
   const mySubtotal =
     myItems.reduce((sum, item) => sum + item.price, 0) +
@@ -101,12 +117,45 @@ const SplitSummary = ({
     myTotal + friendProportions.reduce((sum, friend) => sum + friend.total, 0);
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
+    // Remove leading zeros and handle empty input
+    let inputValue = e.target.value;
+    if (inputValue === "") {
+      setTaxAmount(0);
+      return;
+    }
+
+    // Remove leading zeros but keep decimal part
+    if (inputValue.includes(".")) {
+      const [intPart, decimalPart] = inputValue.split(".");
+      inputValue = (parseInt(intPart, 10) || 0) + "." + decimalPart;
+    } else {
+      inputValue = (parseInt(inputValue, 10) || 0).toString();
+    }
+
+    const value = parseFloat(inputValue);
     setTaxAmount(value);
   };
 
   const handleTipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
+    // Remove leading zeros and handle empty input
+    let inputValue = e.target.value;
+    if (inputValue === "") {
+      setTipAmount(0);
+      if (totalBeforeTaxAndTip > 0) {
+        setTipPercentage(0);
+      }
+      return;
+    }
+
+    // Remove leading zeros but keep decimal part
+    if (inputValue.includes(".")) {
+      const [intPart, decimalPart] = inputValue.split(".");
+      inputValue = (parseInt(intPart, 10) || 0) + "." + decimalPart;
+    } else {
+      inputValue = (parseInt(inputValue, 10) || 0).toString();
+    }
+
+    const value = parseFloat(inputValue);
     setTipAmount(value);
     if (totalBeforeTaxAndTip > 0) {
       setTipPercentage(Math.round((value / totalBeforeTaxAndTip) * 100));
@@ -116,7 +165,23 @@ const SplitSummary = ({
   const handleTipPercentageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const percentage = parseFloat(e.target.value) || 0;
+    // Remove leading zeros and handle empty input
+    let inputValue = e.target.value;
+    if (inputValue === "") {
+      setTipPercentage(0);
+      setTipAmount(0);
+      return;
+    }
+
+    // Remove leading zeros but keep decimal part
+    if (inputValue.includes(".")) {
+      const [intPart, decimalPart] = inputValue.split(".");
+      inputValue = (parseInt(intPart, 10) || 0) + "." + decimalPart;
+    } else {
+      inputValue = (parseInt(inputValue, 10) || 0).toString();
+    }
+
+    const percentage = parseFloat(inputValue);
     setTipPercentage(percentage);
     const newTipAmount = (percentage / 100) * totalBeforeTaxAndTip;
     setTipAmount(parseFloat(newTipAmount.toFixed(2)));
@@ -171,17 +236,25 @@ const SplitSummary = ({
               <Label htmlFor="tax" className="text-xs sm:text-sm">
                 Tax Amount
               </Label>
-              <Input
-                id="tax"
-                type="number"
-                step="0.01"
-                min="0"
-                value={taxAmount}
-                onChange={handleTaxChange}
-                className="text-sm h-8 sm:h-10"
-                inputMode="decimal"
-                style={{ fontSize: "16px" }}
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  {currencySymbol}
+                </span>
+                <Input
+                  id="tax"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={taxAmount === 0 ? "" : taxAmount}
+                  onChange={handleTaxChange}
+                  className="text-sm h-8 sm:h-10"
+                  inputMode="decimal"
+                  style={{
+                    fontSize: "16px",
+                    paddingLeft: `calc(${currencySymbol.length * 0.6}rem + 1.5rem)`,
+                  }}
+                />
+              </div>
             </div>
           )}
 
@@ -191,17 +264,25 @@ const SplitSummary = ({
                 <Label htmlFor="tip" className="text-xs sm:text-sm">
                   Tip Amount
                 </Label>
-                <Input
-                  id="tip"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tipAmount}
-                  onChange={handleTipChange}
-                  className="text-sm h-8 sm:h-10"
-                  inputMode="decimal"
-                  style={{ fontSize: "16px" }}
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {currencySymbol}
+                  </span>
+                  <Input
+                    id="tip"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tipAmount === 0 ? "" : tipAmount}
+                    onChange={handleTipChange}
+                    className="text-sm h-8 sm:h-10"
+                    inputMode="decimal"
+                    style={{
+                      fontSize: "16px",
+                      paddingLeft: `calc(${currencySymbol.length * 0.6}rem + 1.5rem)`,
+                    }}
+                  />
+                </div>
               </div>
               <div className="space-y-1 sm:space-y-2">
                 <Label htmlFor="tipPercentage" className="text-xs sm:text-sm">
@@ -213,7 +294,7 @@ const SplitSummary = ({
                     type="number"
                     min="0"
                     max="100"
-                    value={tipPercentage}
+                    value={tipPercentage === 0 ? "" : tipPercentage}
                     onChange={handleTipPercentageChange}
                     className="text-sm h-8 sm:h-10"
                     inputMode="decimal"
