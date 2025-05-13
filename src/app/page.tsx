@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import dynamic from "next/dynamic";
 import {
   Card,
   CardContent,
@@ -70,6 +71,11 @@ interface SavedReceipt {
   currency: string;
   currencySymbol: string;
 }
+
+// Dynamically import the InstallPrompt component to avoid SSR issues
+const InstallPrompt = dynamic(() => import("@/components/pwa/InstallPrompt"), {
+  ssr: false,
+});
 
 export default function Home() {
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
@@ -421,6 +427,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9 w-full">
+      <InstallPrompt />
       <header className="w-full max-w-5xl mb-4 sm:mb-8 text-center mx-auto">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2">
           ReSplit
