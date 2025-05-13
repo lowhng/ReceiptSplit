@@ -317,7 +317,7 @@ const sections = [
 export default function WikiPage() {
   const [activeSection, setActiveSection] = React.useState("overview");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
   const [showScrollToTop, setShowScrollToTop] = React.useState(false);
 
   // Handle scroll to section
@@ -442,7 +442,9 @@ export default function WikiPage() {
               <section
                 key={section.id}
                 id={section.id}
-                ref={(el) => (sectionRefs.current[section.id] = el)}
+                ref={(el) => {
+                  sectionRefs.current[section.id] = el;
+                }}
                 className="mb-12"
               >
                 <h2 className="text-2xl font-bold mb-4 pb-2 border-b">
