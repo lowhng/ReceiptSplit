@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
 
+interface NavigatorStandalone extends Navigator {
+  standalone?: boolean;
+}
+
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -26,7 +30,7 @@ export default function InstallPrompt() {
       window.matchMedia("(display-mode: standalone)").matches ||
       window.matchMedia("(display-mode: fullscreen)").matches ||
       window.matchMedia("(display-mode: minimal-ui)").matches ||
-      (window.navigator as any).standalone === true; // For iOS
+      (window.navigator as NavigatorStandalone).standalone;
 
     // Check if the user is on a mobile device
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -37,8 +41,9 @@ export default function InstallPrompt() {
 
     // Detect iOS devices
     const isIOSDevice =
-      /iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.MSStream;
-    setIsIOS(isIOSDevice);
+      /iPhone|iPad|iPod/i.test(navigator.userAgent) &&
+      typeof window !== "undefined" &&
+      !("MSStream" in window);
 
     // Only show the prompt if on mobile, not already installed, and not dismissed
     if (isMobile && !isRunningAsPWA && !hasUserDismissedPrompt) {
