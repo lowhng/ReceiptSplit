@@ -1,7 +1,9 @@
 "use client";
 
+import { createClient } from "@/lib/supabase/client";
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -33,6 +35,8 @@ import {
   FolderOpen,
   Trash2,
 } from "lucide-react";
+import { UserAvatar } from "@/components/auth/UserAvatar";
+import { AuthButton } from "@/components/auth/AuthButton";
 import { useRef } from "react";
 import {
   Dialog,
@@ -72,6 +76,7 @@ interface SavedReceipt {
 }
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("capture");
@@ -146,6 +151,20 @@ export default function Home() {
 
     detectUserCurrency();
     loadSavedReceipts();
+
+    // Fetch current user
+    const fetchUser = async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        setUser(data?.user || null);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        setUser(null);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   // Load saved receipts from local storage
@@ -421,11 +440,25 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9 w-full">
-      <header className="w-full max-w-5xl mb-4 sm:mb-8 text-center mx-auto">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2">
+      <header className="w-full max-w-5xl mb-4 sm:mb-8 mx-auto flex flex-col items-center">
+        <div className="w-full flex justify-end mb-2">
+          <div className="flex items-center gap-2">
+            {user && (
+              <Link
+                href="/account"
+                className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                <UserAvatar user={user} className="h-6 w-6" />
+                <span>Account</span>
+              </Link>
+            )}
+            <AuthButton user={user} />
+          </div>
+        </div>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2 text-center">
           ReSplit
         </h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
+        <p className="text-xs sm:text-sm text-muted-foreground text-center">
           Scan receipts and split bills with friends easily
         </p>
       </header>
