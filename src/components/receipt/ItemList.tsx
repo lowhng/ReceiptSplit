@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -70,6 +71,10 @@ const ItemList = ({
 }: ItemListProps) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [splitDialogOpen, setSplitDialogOpen] = useState(false);
+  const [customSplitDialogOpen, setCustomSplitDialogOpen] = useState(false);
+  const [selectedFriends, setSelectedFriends] = useState<
+    Record<string, boolean>
+  >({});
   const [splitPercentages, setSplitPercentages] = useState<
     Record<string, number>
   >({});
@@ -85,18 +90,51 @@ const ItemList = ({
       | "shared"
       | null,
   ) => {
-    onItemAssign(item.id, assignedTo);
+    // If the item is already assigned to this option, unassign it (set to null)
+    const newAssignment = item.assignedTo === assignedTo ? null : assignedTo;
+    onItemAssign(item.id, newAssignment);
 
-    // Only open split dialog for shared items when there's only 1 friend
-    if (assignedTo === "shared" && friendCount === 1) {
+    // Only proceed if we're assigning to shared (not unassigning)
+    if (newAssignment === "shared") {
       setSelectedItem(item);
-      // Initialize with equal split
-      setSplitPercentages({ mine: 50, friend1: 50 });
-      setSplitDialogOpen(true);
+
+      if (friendCount === 1) {
+        // For single friend, open the simple split dialog
+        setSplitPercentages({ mine: 50, friend1: 50 });
+        setSplitDialogOpen(true);
+      } else if (friendCount > 1) {
+        // For multiple friends, open the custom split dialog
+        // Initialize selected friends (all unchecked by default)
+        const initialSelectedFriends: Record<string, boolean> = {};
+        for (let i = 1; i <= friendCount; i++) {
+          initialSelectedFriends[`friend${i}`] = false;
+        }
+        setSelectedFriends(initialSelectedFriends);
+        setCustomSplitDialogOpen(true);
+      }
+    }
+  };
+
+   // Returns the background/border color for checkboxes in the custom split dialog
+  const getCheckboxColor = (id: string) => {
+    switch (id) {
+      case "mine":
+        return "bg-blue-100 border-blue-300";
+      case "friend1":
+        return "bg-green-100 border-green-300";
+      case "friend2":
+        return "bg-yellow-100 border-yellow-300";
+      case "friend3":
+        return "bg-pink-100 border-pink-300";
+      case "friend4":
+        return "bg-orange-100 border-orange-300";
+      default:
+        return "bg-white";
     }
   };
 
   const handleSplitConfirm = () => {
+ 
     if (selectedItem) {
       onSplitPercentageChange(selectedItem.id, splitPercentages);
       setSplitDialogOpen(false);
@@ -156,6 +194,25 @@ const ItemList = ({
     setSplitPercentages(newPercentages);
   };
 
+  // Handles confirming the custom split dialog
+  const handleCustomSplitConfirm = () => {
+    if (selectedItem) {
+      const activeFriends = Object.keys(selectedFriends).filter(
+        (key) => selectedFriends[key],
+      );
+      const totalPeople = activeFriends.length;
+      const equalShare = 100 / totalPeople;
+
+      const percentages: Record<string, number> = {};
+      activeFriends.forEach((id) => {
+        percentages[id] = equalShare;
+      });
+
+      onSplitPercentageChange(selectedItem.id, percentages);
+    }
+    setCustomSplitDialogOpen(false);
+  };
+
   return (
     <div className="w-full bg-background">
       <div className="mb-4 flex items-center justify-between">
@@ -188,26 +245,22 @@ const ItemList = ({
               </p>
               {item.assignedTo === "shared" && item.splitPercentage && (
                 <div className="mt-1 text-xs flex items-center">
-                  <Percent className="h-3 w-3 mr-1" />
                   <span>
-                    You:{" "}
-                    {(
-                      item.splitPercentage.mine ||
-                      Math.round(100 / (friendCount + 1))
-                    ).toFixed(1)}
-                    %
                     {Object.entries(item.splitPercentage)
-                      .filter(([key]) => key !== "mine")
-                      .map(([key, value], index) => (
-                        <span key={key}>
-                          {" "}
-                          |{" "}
-                          {friendInitials[
-                            parseInt(key.replace("friend", "")) - 1
-                          ] || key.replace("friend", "F")}
-                          : {Number(value).toFixed(1)}%
-                        </span>
-                      ))}
+                      .filter(([, value]) => value > 0)
+                      .map(([key, value], index) => {
+                        const label =
+                          key === "mine"
+                            ? "You"
+                            : friendInitials[parseInt(key.replace("friend", "")) - 1] ||
+                              key.replace("friend", "F");
+                        return (
+                          <span key={key}>
+                            {index > 0 && " | "}
+                            {label}:{" "}{Number(value).toFixed(1)}%
+                          </span>
+                        );
+                      })}
                   </span>
                 </div>
               )}
@@ -385,6 +438,104 @@ const ItemList = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Custom split dialog for multiple friends */}
+      <Dialog
+        open={customSplitDialogOpen}
+        onOpenChange={setCustomSplitDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              Share Item: {selectedItem?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-4">
+              <p className="text-sm text-center text-muted-foreground">
+                Select which friends to share this item with
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                <div
+                  className={`flex items-center space-x-2 p-2 border rounded-md cursor-pointer ${
+                    selectedFriends["mine"] ? getCheckboxColor("mine") : ""
+                  }`}
+                  onClick={() =>
+                    setSelectedFriends((prev) => ({
+                      ...prev,
+                      mine: !prev.mine,
+                    }))
+                  }
+                >
+                  <Checkbox
+                    id="share-mine"
+                    checked={selectedFriends["mine"] ?? false}
+                    onCheckedChange={(checked) =>
+                      setSelectedFriends((prev) => ({
+                        ...prev,
+                        mine: checked === true,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="share-mine" className="flex-1 cursor-pointer">
+                    Myself
+                  </Label>
+                </div>
+                {Array.from({ length: friendCount }, (_, i) => {
+                  const friendId = `friend${i + 1}`;
+                  return (
+                    <div
+                      key={friendId}
+                      className={`flex items-center space-x-2 p-2 border rounded-md cursor-pointer ${
+                        selectedFriends[friendId] ? getCheckboxColor(friendId) : ""
+                      }`}
+                      onClick={() =>
+                        setSelectedFriends((prev) => ({
+                          ...prev,
+                          [friendId]: !prev[friendId],
+                        }))
+                      }
+                    >
+                      <Checkbox
+                        id={`share-${friendId}`}
+                        checked={selectedFriends[friendId] ?? false}
+                        onCheckedChange={(checked) =>
+                          setSelectedFriends((prev) => ({
+                            ...prev,
+                            [friendId]: checked === true,
+                          }))
+                        }
+                      />
+                      <Label htmlFor={`share-${friendId}`} className="flex-1 cursor-pointer">
+                        {friendInitials[i] || `Friend ${i + 1}`}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="p-3 border rounded-md text-center">
+                <p className="text-xs text-muted-foreground">
+                  Item will be split equally between you and selected friends
+                </p>
+                <p className="text-sm font-medium mt-1">
+                  {selectedItem?.name} - {currencySymbol}
+                  {selectedItem?.price.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCustomSplitDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCustomSplitConfirm}>Confirm Sharing</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
