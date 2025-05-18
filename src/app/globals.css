@@ -95,4 +95,21 @@
   .prose a {
     @apply text-primary hover:underline;
   }
+
+  /* Currency selector styles */
+  .SelectTrigger[data-placeholder] {
+    @apply whitespace-nowrap overflow-visible;
+  }
+
+  /* Add padding for mobile devices */
+  main,
+  .main-content,
+  .DialogFooter,
+  form .w-full,
+  .DialogContent .w-full,
+  .DialogContent button.w-full,
+  header .flex,
+  nav .flex {
+    @apply px-4 sm:px-6;
+  }
 }

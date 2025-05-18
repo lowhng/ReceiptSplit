@@ -11,8 +11,9 @@ type UserAvatarProps = {
 export function UserAvatar({ user, className }: UserAvatarProps) {
   if (!user) return null;
 
-  // Get initials from email
-  const initials = user.email ? user.email.substring(0, 2).toUpperCase() : "U";
+  // Get initials from name in user_metadata or email
+  const name = user.user_metadata?.name || user.email?.split("@")[0] || "User";
+  const initials = name.substring(0, 2).toUpperCase();
 
   return (
     <Avatar className={className}>

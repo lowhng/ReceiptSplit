@@ -21,6 +21,13 @@ export default async function AccountPage() {
     redirect("/");
   }
 
+  // Fetch user profile data from the profiles table
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9 w-full">
       <header className="w-full max-w-5xl mb-4 sm:mb-8 text-center mx-auto">
@@ -42,6 +49,12 @@ export default async function AccountPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Name</p>
+                <p className="text-sm text-muted-foreground">
+                  {profile?.name || "Not provided"}
+                </p>
+              </div>
               <div>
                 <p className="text-sm font-medium">Email</p>
                 <p className="text-sm text-muted-foreground">{user.email}</p>

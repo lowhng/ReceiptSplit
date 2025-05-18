@@ -68,6 +68,7 @@ export function AuthButton({ user, className }: AuthButtonProps) {
       const formData = new FormData(event.currentTarget);
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
+      const name = formData.get("name") as string;
       const supabase = createClient();
 
       let result;
@@ -77,6 +78,9 @@ export function AuthButton({ user, className }: AuthButtonProps) {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: {
+              name: name,
+            },
           },
         });
       } else {
@@ -116,16 +120,23 @@ export function AuthButton({ user, className }: AuthButtonProps) {
 
   if (user) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        className={className}
-        onClick={handleSignOut}
-        disabled={isLoading}
-      >
-        <LogOut className="h-4 w-4 mr-2" />
-        {isLoading ? "Signing out..." : "Sign out"}
-      </Button>
+      <div className="flex items-center gap-2 ml-auto">
+        <div className="text-sm font-medium mr-2">
+          <a href="/account" className="hover:underline">
+            {user?.user_metadata?.name || user?.email}
+          </a>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className={className}
+          onClick={handleSignOut}
+          disabled={isLoading}
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          {isLoading ? "Signing out..." : "Sign out"}
+        </Button>
+      </div>
     );
   }
 
@@ -183,6 +194,10 @@ export function AuthButton({ user, className }: AuthButtonProps) {
               onSubmit={(e) => handleFormSubmit(e, "/api/auth/sign-up")}
               className="space-y-4 py-4"
             >
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" name="name" type="text" required />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" required />

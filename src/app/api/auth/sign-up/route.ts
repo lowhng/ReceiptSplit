@@ -5,6 +5,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const email = String(formData.get("email"));
   const password = String(formData.get("password"));
+  const name = String(formData.get("name") || "");
   const supabase = createClient();
 
   const { data, error } = await supabase.auth.signUp({
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
     password,
     options: {
       emailRedirectTo: `${new URL(request.url).origin}/api/auth/callback`,
+      data: {
+        name: name,
+      },
     },
   });
 

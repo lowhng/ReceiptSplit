@@ -115,6 +115,8 @@ export default function Home() {
   const [savedReceipts, setSavedReceipts] = useState<SavedReceipt[]>([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [saveLocationDialogOpen, setSaveLocationDialogOpen] = useState(false);
+  const [saveToSupabase, setSaveToSupabase] = useState(false);
   const [receiptName, setReceiptName] = useState("");
   const { toast } = useToast();
 
@@ -150,7 +152,6 @@ export default function Home() {
     };
 
     detectUserCurrency();
-    loadSavedReceipts();
 
     // Fetch current user
     const fetchUser = async () => {
@@ -158,9 +159,13 @@ export default function Home() {
         const supabase = createClient();
         const { data } = await supabase.auth.getUser();
         setUser(data?.user || null);
+        // Load saved receipts after user is fetched
+        await loadSavedReceipts();
       } catch (error) {
         console.error("Error fetching user:", error);
         setUser(null);
+        // Still load local receipts if user fetch fails
+        loadSavedReceipts();
       }
     };
 
@@ -197,7 +202,7 @@ export default function Home() {
     setSaveDialogOpen(true);
   };
 
-  const handleSaveConfirm = () => {
+  const handleSaveConfirm = async () => {
     if (!receiptName.trim()) {
       toast({
         title: "Name required",
@@ -219,23 +224,79 @@ export default function Home() {
       currencySymbol,
     };
 
-    const updatedReceipts = [...savedReceipts, newReceipt];
-    setSavedReceipts(updatedReceipts);
+    try {
+      if (user && saveToSupabase) {
+        const supabase = createClient();
+        const { data: receiptData, error } = await supabase
+          .from("receipts") // <-- Your Supabase table name
+          .insert([
+            {
+              user_id: user.id,
+              name: newReceipt.name,
+              date: newReceipt.date,
+              receipt_image: newReceipt.receiptImage,
+              friend_count: newReceipt.friendCount,
+              friend_initials: newReceipt.friendInitials,
+              currency: newReceipt.currency,
+              currency_symbol: newReceipt.currencySymbol,
+              tax_amount: taxAmount,
+              tip_amount: tipAmount,
+              include_tax: includeTax,
+              include_tip: includeTip,
+              tip_percentage: tipPercentage,
+            },
+          ])
+          .select();
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "resplit-saved-receipts",
-        JSON.stringify(updatedReceipts),
-      );
+        // Now insert each item with a reference to the receipt
+        if (receiptData && receiptData.length > 0) {
+          const receiptId = receiptData[0].id;
+
+          // Insert each item
+          for (const item of newReceipt.items) {
+            await supabase.from("receipt_items").insert({
+              receipt_id: receiptId,
+              name: item.name,
+              price: item.price,
+              assigned_to: item.assignedTo,
+              split_percentage: item.splitPercentage || null,
+            });
+          }
+        }
+
+        if (error) throw error;
+
+        toast({
+          title: "Receipt saved to cloud",
+          description: `"${receiptName}" is now available across devices"`,
+        });
+      } else {
+        const updatedReceipts = [...savedReceipts, newReceipt];
+        setSavedReceipts(updatedReceipts);
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(
+            "resplit-saved-receipts",
+            JSON.stringify(updatedReceipts),
+          );
+        }
+
+        toast({
+          title: "Receipt saved locally",
+          description: `"${receiptName}" has been saved to your device"`,
+        });
+      }
+    } catch (error) {
+      console.error("Error saving receipt:", error);
+      toast({
+        title: "Save failed",
+        description: "Something went wrong while saving the receipt",
+        variant: "destructive",
+      });
+    } finally {
+      setSaveDialogOpen(false);
+      setReceiptName("");
     }
-
-    toast({
-      title: "Receipt saved",
-      description: `"${receiptName}" has been saved to your device`,
-    });
-
-    setSaveDialogOpen(false);
-    setReceiptName("");
   };
 
   // Load a saved receipt
@@ -252,22 +313,53 @@ export default function Home() {
 
     toast({
       title: "Receipt loaded",
-      description: `"${receipt.name}" has been loaded`,
+      description: `"${receipt.name}" has been loaded`
     });
   };
 
   // Delete a saved receipt
-  const deleteReceipt = (id: string) => {
-    const updatedReceipts = savedReceipts.filter(
-      (receipt) => receipt.id !== id,
-    );
-    setSavedReceipts(updatedReceipts);
+  const deleteReceipt = async (id: string) => {
+    try {
+      // Check if this receipt exists in Supabase
+      if (user) {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("receipts")
+          .select("id")
+          .eq("id", id)
+          .single();
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "resplit-saved-receipts",
-        JSON.stringify(updatedReceipts),
+        // If it exists in Supabase, delete it there
+        if (data) {
+          const { error } = await supabase
+            .from("receipts")
+            .delete()
+            .eq("id", id);
+
+          if (error) throw error;
+        }
+      }
+
+      // Update local state
+      const updatedReceipts = savedReceipts.filter(
+        (receipt) => receipt.id !== id,
       );
+      setSavedReceipts(updatedReceipts);
+
+      // Update local storage
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          "resplit-saved-receipts",
+          JSON.stringify(updatedReceipts),
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting receipt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete receipt. Please try again.",
+        variant: "destructive",
+      });
     }
 
     toast({
@@ -440,20 +532,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center sm:p-4 md:p-8 py-9 w-full">
-      <header className="w-full max-w-5xl mb-4 sm:mb-8 mx-auto flex flex-col items-center">
+      <header className="w-full max-w-5xl mb-4 sm:mb-8 mx-auto flex flex-col">
         <div className="w-full flex justify-end mb-2">
-          <div className="flex items-center gap-2">
-            {user && (
-              <Link
-                href="/account"
-                className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                <UserAvatar user={user} className="h-6 w-6" />
-                <span>Account</span>
-              </Link>
-            )}
-            <AuthButton user={user} />
-          </div>
+          <AuthButton user={user} />
         </div>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2 text-center">
           ReSplit
@@ -737,7 +818,11 @@ export default function Home() {
                     <Button
                       variant="outline"
                       className="flex items-center justify-center gap-2 text-xs sm:text-sm"
-                      onClick={() => setLoadDialogOpen(true)}
+                      onClick={async () => {
+                        console.log("🔄 Load Receipt button clicked (summary tab)");
+                        await loadSavedReceipts();
+                        setLoadDialogOpen(true);
+                      }}
                     >
                       <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" /> Load
                       Receipt
@@ -907,8 +992,9 @@ export default function Home() {
                 };
                 setCurrencySymbol(symbols[value] || "$");
               }}
+              className="min-w-[400] justify-center items-center text-center min-w-[400px] min-h-[50] min-h-[50px]"
             >
-              <SelectTrigger className="w-24 h-7 text-xs">
+              <SelectTrigger className="w-auto min-w-24 h-7 text-xs whitespace-nowrap">
                 <SelectValue placeholder="Currency" />
               </SelectTrigger>
               <SelectContent>
@@ -931,6 +1017,64 @@ export default function Home() {
           <p>Another product made with 💖 by Wei Hong</p>
         </div>
       </main>
+      {/* Save Location Dialog - shown first if user is logged in */}
+      <Dialog
+        open={saveLocationDialogOpen}
+        onOpenChange={setSaveLocationDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md max-w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>Save Location</DialogTitle>
+            <DialogDescription>
+              Choose where to save your receipt
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="save-cloud"
+                name="save-location"
+                checked={saveToSupabase}
+                onChange={() => setSaveToSupabase(true)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="save-cloud" className="text-sm">
+                Save to cloud (access from any device)
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="save-local"
+                name="save-location"
+                checked={!saveToSupabase}
+                onChange={() => setSaveToSupabase(false)}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="save-local" className="text-sm">
+                Save locally (only on this device)
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSaveLocationDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setSaveLocationDialogOpen(false);
+                setSaveDialogOpen(true);
+              }}
+            >
+              Next
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Save Receipt Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="sm:max-w-md max-w-[95vw]">
@@ -953,11 +1097,46 @@ export default function Home() {
               style={{ fontSize: "16px" }}
             />
           </div>
+          {user && (
+            <div className="pb-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                Choose where to save:
+              </p>
+              <div className="flex items-center space-x-2 mb-2">
+                <input
+                  type="radio"
+                  id="save-cloud"
+                  name="save-location"
+                  checked={saveToSupabase}
+                  onChange={() => setSaveToSupabase(true)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="save-cloud" className="text-sm">
+                  Save to cloud (access from any device)
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="save-local"
+                  name="save-location"
+                  checked={!saveToSupabase}
+                  onChange={() => setSaveToSupabase(false)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="save-local" className="text-sm">
+                  Save locally (only on this device)
+                </Label>
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveConfirm}>Save</Button>
+            <Button onClick={handleSaveConfirm}>
+              {user && saveToSupabase ? "Save to Cloud" : "Save Locally"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

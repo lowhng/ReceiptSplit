@@ -14,19 +14,120 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          name: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
           id: string
+          name?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          name?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      receipt_items: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          id: string
+          name: string
+          price: number
+          receipt_id: string
+          split_percentage: Json | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          price: number
+          receipt_id: string
+          split_percentage?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          receipt_id?: string
+          split_percentage?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_items_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          created_at: string
+          currency: string
+          currency_symbol: string
+          date: string
+          friend_count: number
+          friend_initials: Json
+          id: string
+          include_tax: boolean | null
+          include_tip: boolean | null
+          name: string
+          receipt_image: string | null
+          tax_amount: number | null
+          tip_amount: number | null
+          tip_percentage: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          date?: string
+          friend_count?: number
+          friend_initials?: Json
+          id?: string
+          include_tax?: boolean | null
+          include_tip?: boolean | null
+          name: string
+          receipt_image?: string | null
+          tax_amount?: number | null
+          tip_amount?: number | null
+          tip_percentage?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          date?: string
+          friend_count?: number
+          friend_initials?: Json
+          id?: string
+          include_tax?: boolean | null
+          include_tip?: boolean | null
+          name?: string
+          receipt_image?: string | null
+          tax_amount?: number | null
+          tip_amount?: number | null
+          tip_percentage?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
