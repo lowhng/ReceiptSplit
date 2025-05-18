@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
@@ -11,6 +12,8 @@ export async function GET(request: Request) {
         { status: 400 },
       );
     }
+
+    const sanitizedUserId = userId.replace(/'/g, "''");
 
     const PICA_SECRET_KEY = process.env.PICA_SECRET_KEY;
     const PICA_SUPABASE_CONNECTION_KEY =
@@ -28,7 +31,7 @@ export async function GET(request: Request) {
     // SQL query to get receipts and their items
     const query = `
       WITH user_receipts AS (
-        SELECT * FROM receipts WHERE user_id = '${userId}'
+        SELECT * FROM receipts WHERE user_id = '${sanitizedUserId}'
       ),
       receipt_items AS (
         SELECT ri.* FROM receipt_items ri
@@ -66,10 +69,22 @@ export async function GET(request: Request) {
 
     const data = await response.json();
 
+    type ReceiptRecord = {
+      id: string;
+      name: string;
+      date: string;
+      receipt_image: string;
+      friend_count: number;
+      friend_initials: string[];
+      currency: string;
+      currency_symbol: string;
+      items?: any[];
+    };
+
     // Transform the data to match the SavedReceipt format expected by the frontend
-    const formattedReceipts = data.map((receipt: any) => {
+    const formattedReceipts = data.map((receipt: ReceiptRecord) => {
       // Format items to match the expected structure
-      const formattedItems = receipt.items.map((item: any) => ({
+      const formattedItems = (receipt.items ?? []).map((item: any) => ({
         id: item.id,
         name: item.name,
         price: item.price,
