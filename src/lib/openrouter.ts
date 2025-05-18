@@ -111,6 +111,19 @@ export async function extractItemsFromReceipt(
 
     // Parse the response content as JSON
     try {
+      // Check if data.choices exists and has at least one element
+      if (
+        !data.choices ||
+        !Array.isArray(data.choices) ||
+        data.choices.length === 0
+      ) {
+        console.error(
+          "Invalid OpenRouter response format - missing choices array:",
+          data,
+        );
+        return [];
+      }
+
       const content = data.choices[0].message.content;
       const parsedContent = JSON.parse(content);
 
