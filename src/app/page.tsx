@@ -992,7 +992,6 @@ export default function Home() {
                 };
                 setCurrencySymbol(symbols[value] || "$");
               }}
-              className="min-w-[400] justify-center items-center text-center min-w-[400px] min-h-[50] min-h-[50px]"
             >
               <SelectTrigger className="w-auto min-w-24 h-7 text-xs whitespace-nowrap">
                 <SelectValue placeholder="Currency" />
