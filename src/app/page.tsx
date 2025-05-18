@@ -215,7 +215,7 @@ export default function Home() {
           name: receipt.name,
           date: receipt.date,
           receiptImage: receipt.receipt_image,
-          items: items.map((item: any) => ({
+          items: (items ?? []).map((item: any) => ({
             id: item.id,
             name: item.name,
             price: item.price,
