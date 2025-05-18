@@ -1,5 +1,3 @@
-// Full version of SplitSummary with all logic and UI preserved
-
 "use client";
 
 import { useState } from "react";
@@ -309,55 +307,81 @@ const SplitSummary = ({
 
         <Separator />
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-          <div className="space-y-1">
-            <h3 className="font-medium text-primary text-sm sm:text-base">
-              Your Total
-            </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Items: {formatCurrency(mySubtotal)}
-            </p>
-            {myTaxProportion > 0 && (
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Tax: {formatCurrency(myTaxProportion)}
-              </p>
-            )}
-            {myTipProportion > 0 && (
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Tip: {formatCurrency(myTipProportion)}
-              </p>
-            )}
-            <p className="font-bold text-sm sm:text-base">
-              {formatCurrency(myTotal)}
-            </p>
-          </div>
-          <div>
-            {friendProportions.map((friend, index) => (
-              <div key={friend.id} className="space-y-1 mb-3">
-                <h3
-                  className={`font-medium text-sm sm:text-base ${index === 0 ? "text-green-500" : index === 1 ? "text-yellow-500" : index === 2 ? "text-pink-500" : "text-orange-500"}`}
-                >
-                  {friendInitials[index] || `Friend ${index + 1}`}'s Total
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="rounded-md p-3 bg-blue-100 border-blue-300">
+            <div className="flex justify-between items-start space-x-2">
+              <div className="space-y-1">
+                <h3 className="font-medium text-sm sm:text-base text-muted-foreground">
+                  Your Total
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Items: {formatCurrency(friend.subtotal)}
+                  Items: {formatCurrency(mySubtotal)}
                 </p>
-                {friend.taxProportion > 0 && (
+                {myTaxProportion > 0 && (
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    Tax: {formatCurrency(friend.taxProportion)}
+                    Tax: {formatCurrency(myTaxProportion)}
                   </p>
                 )}
-                {friend.tipProportion > 0 && (
+                {myTipProportion > 0 && (
                   <p className="text-xs sm:text-sm text-muted-foreground">
-                    Tip: {formatCurrency(friend.tipProportion)}
+                    Tip: {formatCurrency(myTipProportion)}
                   </p>
                 )}
-                <p className="font-bold text-sm sm:text-base">
-                  {formatCurrency(friend.total)}
-                </p>
               </div>
-            ))}
+              <div className="font-bold text-sm sm:text-base whitespace-nowrap">
+                {formatCurrency(myTotal)}
+              </div>
+            </div>
           </div>
+
+          {friendProportions.map((friend, index) => (
+            <div
+              key={friend.id}
+              className={`rounded-md p-3 ${
+                index === 0
+                  ? "bg-green-50 border border-green-200"
+                  : index === 1
+                  ? "bg-yellow-50 border border-yellow-200"
+                  : index === 2
+                  ? "bg-pink-50 border border-pink-200"
+                  : "bg-orange-50 border border-orange-200"
+              }`}
+            >
+              <div className="flex justify-between items-start space-x-2">
+                <div className="space-y-1">
+                  <h3
+                    className={`font-medium text-sm sm:text-base ${
+                      index === 0
+                        ? "text-green-500"
+                        : index === 1
+                        ? "text-yellow-500"
+                        : index === 2
+                        ? "text-pink-500"
+                        : "text-orange-500"
+                    }`}
+                  >
+                    {friendInitials[index] || `Friend ${index + 1}`}'s Total
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Items: {formatCurrency(friend.subtotal)}
+                  </p>
+                  {friend.taxProportion > 0 && (
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Tax: {formatCurrency(friend.taxProportion)}
+                    </p>
+                  )}
+                  {friend.tipProportion > 0 && (
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Tip: {formatCurrency(friend.tipProportion)}
+                    </p>
+                  )}
+                </div>
+                <div className="font-bold text-sm sm:text-base whitespace-nowrap">
+                  {formatCurrency(friend.total)}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="mt-3 sm:mt-4 pt-2 border-t">

@@ -285,13 +285,13 @@ export default function SummaryTab({
               <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4" /> Load Receipt
             </Button>
 
-            <Button
+            {/* <Button
               variant="outline"
               className="flex items-center justify-center gap-2 text-xs sm:text-sm"
               onClick={handleExportCSV}
             >
               <Download className="h-3 w-3 sm:h-4 sm:w-4" /> Export CSV
-            </Button>
+            </Button> */}
 
             <Button
               variant="outline"

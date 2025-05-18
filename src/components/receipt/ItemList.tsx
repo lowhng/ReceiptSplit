@@ -115,7 +115,26 @@ const ItemList = ({
     }
   };
 
+   // Returns the background/border color for checkboxes in the custom split dialog
+  const getCheckboxColor = (id: string) => {
+    switch (id) {
+      case "mine":
+        return "bg-blue-100 border-blue-300";
+      case "friend1":
+        return "bg-green-100 border-green-300";
+      case "friend2":
+        return "bg-yellow-100 border-yellow-300";
+      case "friend3":
+        return "bg-pink-100 border-pink-300";
+      case "friend4":
+        return "bg-orange-100 border-orange-300";
+      default:
+        return "bg-white";
+    }
+  };
+
   const handleSplitConfirm = () => {
+ 
     if (selectedItem) {
       onSplitPercentageChange(selectedItem.id, splitPercentages);
       setSplitDialogOpen(false);
@@ -226,7 +245,6 @@ const ItemList = ({
               </p>
               {item.assignedTo === "shared" && item.splitPercentage && (
                 <div className="mt-1 text-xs flex items-center">
-                  <Percent className="h-3 w-3 mr-1" />
                   <span>
                     {Object.entries(item.splitPercentage)
                       .filter(([, value]) => value > 0)
@@ -239,7 +257,7 @@ const ItemList = ({
                         return (
                           <span key={key}>
                             {index > 0 && " | "}
-                            {label}: {Number(value).toFixed(1)}%
+                            {label}:{" "}{Number(value).toFixed(1)}%
                           </span>
                         );
                       })}
@@ -437,43 +455,58 @@ const ItemList = ({
               <p className="text-sm text-center text-muted-foreground">
                 Select which friends to share this item with
               </p>
-              <div className="flex items-center space-x-2 p-2 border rounded-md">
-                <Checkbox
-                  id="share-mine"
-                  checked={selectedFriends["mine"] ?? false}
-                  onCheckedChange={(checked) => {
+              <div className="grid grid-cols-1 gap-2">
+                <div
+                  className={`flex items-center space-x-2 p-2 border rounded-md cursor-pointer ${
+                    selectedFriends["mine"] ? getCheckboxColor("mine") : ""
+                  }`}
+                  onClick={() =>
                     setSelectedFriends((prev) => ({
                       ...prev,
-                      mine: checked === true,
-                    }));
-                  }}
-                />
-                <Label htmlFor="share-mine" className="flex-1 cursor-pointer">
-                  Myself
-                </Label>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
+                      mine: !prev.mine,
+                    }))
+                  }
+                >
+                  <Checkbox
+                    id="share-mine"
+                    checked={selectedFriends["mine"] ?? false}
+                    onCheckedChange={(checked) =>
+                      setSelectedFriends((prev) => ({
+                        ...prev,
+                        mine: checked === true,
+                      }))
+                    }
+                  />
+                  <Label htmlFor="share-mine" className="flex-1 cursor-pointer">
+                    Myself
+                  </Label>
+                </div>
                 {Array.from({ length: friendCount }, (_, i) => {
                   const friendId = `friend${i + 1}`;
                   return (
                     <div
                       key={friendId}
-                      className="flex items-center space-x-2 p-2 border rounded-md"
+                      className={`flex items-center space-x-2 p-2 border rounded-md cursor-pointer ${
+                        selectedFriends[friendId] ? getCheckboxColor(friendId) : ""
+                      }`}
+                      onClick={() =>
+                        setSelectedFriends((prev) => ({
+                          ...prev,
+                          [friendId]: !prev[friendId],
+                        }))
+                      }
                     >
                       <Checkbox
                         id={`share-${friendId}`}
-                        checked={selectedFriends[friendId] || false}
-                        onCheckedChange={(checked) => {
+                        checked={selectedFriends[friendId] ?? false}
+                        onCheckedChange={(checked) =>
                           setSelectedFriends((prev) => ({
                             ...prev,
                             [friendId]: checked === true,
-                          }));
-                        }}
+                          }))
+                        }
                       />
-                      <Label
-                        htmlFor={`share-${friendId}`}
-                        className="flex-1 cursor-pointer"
-                      >
+                      <Label htmlFor={`share-${friendId}`} className="flex-1 cursor-pointer">
                         {friendInitials[i] || `Friend ${i + 1}`}
                       </Label>
                     </div>
