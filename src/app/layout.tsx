@@ -4,6 +4,14 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
+let Analytics: React.ComponentType | null = null;
+
+if (process.env.NODE_ENV === "production") {
+  // Dynamically require to avoid Tempo build crash
+  // @ts-ignore
+  Analytics = require("@vercel/analytics/react").Analytics;
+}
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -35,6 +43,7 @@ export default function RootLayout({
       <body className={`${inter.className} overscroll-none` + " flex"}>
         <Script src="https://api.tempo.new/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js" />
         {children}
+        {Analytics && <Analytics />}
         <TempoInit />
       </body>
     </html>

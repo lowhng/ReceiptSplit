@@ -9,7 +9,7 @@ interface PageHeaderProps {
 export default function PageHeader({ user }: PageHeaderProps) {
   return (
     <header className="w-full max-w-5xl mb-4 sm:mb-8 mx-auto flex flex-col">
-      <div className="w-full flex justify-end mb-2">
+      <div className="w-full flex justify-end mb-2 px-2 sm:px-4">
         <AuthButton user={user} />
       </div>
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-1 sm:mb-2 text-center">

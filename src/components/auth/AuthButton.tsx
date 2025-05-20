@@ -120,7 +120,7 @@ export function AuthButton({ user, className }: AuthButtonProps) {
 
   if (user) {
     return (
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2 !pr-0">
         <div className="text-sm font-medium mr-2">
           <a href="/account" className="hover:underline">
             {user?.user_metadata?.name || user?.email}
